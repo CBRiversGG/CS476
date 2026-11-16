@@ -1,0 +1,2716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Procedural & Latent Noise Explorer</title>
+<style>
+  :root {
+    /* Official UAB Dark Green & UAB Gold Theme */
+    --uab-green-primary: #1E6B52;
+    --uab-gold-primary: #F4C300;
+    --uab-gold-bright: #FFC72C;
+    --bg-root: #0A291F;
+    --bg-panel: #0E3427;
+    --bg-card: #123D2E;
+    --bg-elevated: #174D3B;
+    --border-subtle: #24634D;
+    --border-active: #F4C300;
+    --text-primary: #F7F9F8;
+    --text-secondary: #D4E2DC;
+    --text-muted: #93B5A8;
+    --accent-cyan: #F4C300;
+    --accent-indigo: #FFC72C;
+    --accent-emerald: #4ADE80;
+    --accent-amber: #F4C300;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    height: 100%;
+    background-color: var(--bg-root);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+
+  /* Custom Scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg-root);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1E6B52;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #F4C300;
+  }
+
+  /* App Header */
+  .app-header {
+    height: 48px;
+    background: linear-gradient(90deg, #09221A 0%, #123D2E 60%, #174D3B 100%);
+    border-bottom: 2px solid var(--uab-gold-primary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px;
+    user-select: none;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    font-size: 15px;
+    color: var(--text-primary);
+  }
+
+  .brand-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #F4C300, #FFC72C);
+    border: 1px solid #FFF2B2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0A291F;
+    font-family: var(--font-mono);
+    font-weight: 900;
+    font-size: 12px;
+    box-shadow: 0 0 10px rgba(244, 195, 0, 0.35);
+  }
+
+  .header-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--uab-gold-bright);
+    background: rgba(244, 195, 0, 0.14);
+    border: 1px solid rgba(244, 195, 0, 0.45);
+    padding: 2px 10px;
+    border-radius: 999px;
+  }
+
+  /* Three-Column Studio Layout */
+  .workspace {
+    display: flex;
+    height: calc(100vh - 48px);
+    width: 100vw;
+  }
+
+  /* Left Sidebar: 260px */
+  .sidebar {
+    width: 260px;
+    min-width: 260px;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 12px 10px;
+  }
+
+  .nav-category {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--uab-gold-primary);
+    padding: 10px 10px 6px 10px;
+    opacity: 0.88;
+  }
+
+  .nav-category:first-child {
+    padding-top: 4px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    padding: 8px 10px;
+    margin-bottom: 2px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.14s ease;
+  }
+
+  .nav-item:hover {
+    background: var(--bg-card);
+    border-color: rgba(244, 195, 0, 0.25);
+    color: var(--text-primary);
+  }
+
+  .nav-item.active {
+    background: rgba(244, 195, 0, 0.16);
+    border-color: var(--uab-gold-primary);
+    color: #FFFFFF;
+    font-weight: 600;
+    box-shadow: inset 3px 0 0 var(--uab-gold-primary);
+  }
+
+  .nav-item .nav-index {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-right: 8px;
+  }
+
+  .nav-item.active .nav-index {
+    color: var(--uab-gold-bright);
+  }
+
+  .nav-tag {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    border: 1px solid rgba(36, 99, 77, 0.7);
+  }
+
+  .nav-item.active .nav-tag {
+    background: var(--uab-gold-primary);
+    color: #0A291F;
+    font-weight: 700;
+    border-color: var(--uab-gold-bright);
+  }
+
+  /* Center Info Panel: ~38% */
+  .info-panel {
+    width: 38%;
+    min-width: 320px;
+    background: var(--bg-root);
+    border-right: 1px solid var(--border-subtle);
+    overflow-y: auto;
+    padding: 22px 24px;
+  }
+
+  .doc-header {
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .category-pill {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 9px;
+    border-radius: 5px;
+    margin-bottom: 8px;
+  }
+
+  .pill-classic {
+    background: rgba(244, 195, 0, 0.15);
+    color: var(--uab-gold-bright);
+    border: 1px solid rgba(244, 195, 0, 0.45);
+  }
+
+  .pill-latent {
+    background: rgba(30, 107, 82, 0.55);
+    color: #FFE484;
+    border: 1px solid rgba(244, 195, 0, 0.55);
+  }
+
+  .doc-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+
+  .doc-section {
+    margin-bottom: 18px;
+  }
+
+  .doc-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--uab-gold-primary);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .doc-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 13px 15px;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+
+  .steps-list {
+    list-style: none;
+    counter-reset: step-counter;
+  }
+
+  .steps-list li {
+    counter-increment: step-counter;
+    position: relative;
+    padding-left: 28px;
+    margin-bottom: 10px;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+  }
+
+  .steps-list li:last-child {
+    margin-bottom: 0;
+  }
+
+  .steps-list li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    background: rgba(244, 195, 0, 0.18);
+    border: 1px solid var(--uab-gold-primary);
+    color: var(--uab-gold-bright);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .math-card {
+    background: #082018;
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--uab-gold-primary);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .math-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px dashed rgba(36, 99, 77, 0.85);
+    gap: 12px;
+  }
+
+  .math-row:last-child {
+    border-bottom: none;
+  }
+
+  .math-label {
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .math-val {
+    color: var(--text-primary);
+    text-align: right;
+  }
+
+  /* Active Parameters Reference List in Center Documentation */
+  .param-ref-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .param-ref-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--uab-gold-primary);
+    border-radius: 7px;
+    padding: 10px 13px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .param-ref-item:hover {
+    background: var(--bg-elevated);
+    border-color: rgba(244, 195, 0, 0.65);
+  }
+
+  .param-ref-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+
+  .param-ref-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--uab-gold-bright);
+  }
+
+  .param-ref-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
+  .param-ref-live {
+    background: rgba(244, 195, 0, 0.18);
+    border: 1px solid rgba(244, 195, 0, 0.55);
+    color: var(--uab-gold-bright);
+    padding: 1px 7px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+
+  .param-ref-bounds {
+    background: #09231B;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    padding: 1px 7px;
+    border-radius: 4px;
+  }
+
+  .param-ref-desc {
+    font-size: 12.8px;
+    color: var(--text-secondary);
+    line-height: 1.52;
+  }
+
+  /* Right Visualizer & Parameters Panel: ~42% */
+  .viz-panel {
+    flex: 1;
+    min-width: 360px;
+    background: var(--bg-panel);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 16px 18px;
+    gap: 14px;
+  }
+
+  /* Controls Card */
+  .controls-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .controls-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .controls-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--uab-gold-primary);
+  }
+
+  .params-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 16px;
+    margin-bottom: 14px;
+  }
+
+  .param-control {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .param-control.full-width {
+    grid-column: span 2;
+  }
+
+  .param-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+  }
+
+  .param-name {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .param-value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--uab-gold-bright);
+    background: rgba(244, 195, 0, 0.16);
+    border: 1px solid rgba(244, 195, 0, 0.35);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 5px;
+    background: #09231B;
+    border: 1px solid var(--border-subtle);
+    border-radius: 3px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--uab-gold-primary);
+    cursor: pointer;
+    border: 2px solid #0A291F;
+    box-shadow: 0 0 8px rgba(244, 195, 0, 0.65);
+  }
+
+  select.param-select {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    padding: 5px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: var(--font-sans);
+    outline: none;
+    cursor: pointer;
+  }
+
+  select.param-select:focus {
+    border-color: var(--uab-gold-primary);
+  }
+
+  .action-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn-generate {
+    flex: 1;
+    background: linear-gradient(135deg, #F4C300 0%, #FFC72C 100%);
+    color: #0A291F;
+    border: 1px solid #FFF0A6;
+    border-radius: 7px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    box-shadow: 0 2px 12px rgba(244, 195, 0, 0.28);
+  }
+
+  .btn-generate:hover {
+    filter: brightness(1.06);
+    box-shadow: 0 4px 18px rgba(244, 195, 0, 0.45);
+  }
+
+  .btn-generate:active {
+    transform: scale(0.985);
+  }
+
+  .btn-generate.pulse {
+    animation: pulseGlow 0.35s ease;
+  }
+
+  @keyframes pulseGlow {
+    0% { box-shadow: 0 0 0 0 rgba(244, 195, 0, 0.85); }
+    100% { box-shadow: 0 0 0 12px rgba(244, 195, 0, 0); }
+  }
+
+  .btn-seed {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    border-radius: 7px;
+    padding: 9px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-seed:hover {
+    border-color: var(--uab-gold-primary);
+    color: var(--uab-gold-bright);
+    background: #1E6B52;
+  }
+
+  /* Viewport Container */
+  .viewport-card {
+    flex: 1;
+    min-height: 340px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .viewport-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 12px;
+    background: #0B2D22;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .view-toggle-group {
+    display: flex;
+    background: var(--bg-root);
+    padding: 3px;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+  }
+
+  .view-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .view-btn.active {
+    background: var(--uab-gold-primary);
+    color: #0A291F;
+    font-weight: 700;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  }
+
+  .palette-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .canvas-wrapper {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    min-height: 270px;
+    background: #061A13;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  canvas#noiseCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: crosshair;
+  }
+
+  /* Telemetry / Hover Readout Bar */
+  .telemetry-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 12px;
+    background: #082018;
+    border-top: 1px solid var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .telemetry-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .telemetry-item span.lbl {
+    color: var(--text-muted);
+    margin-right: 4px;
+  }
+
+  .telemetry-item span.val {
+    color: var(--uab-gold-bright);
+    font-weight: 700;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 1080px) {
+    html, body {
+      overflow: auto;
+      height: auto;
+    }
+    .workspace {
+      flex-direction: column;
+      height: auto;
+    }
+    .sidebar {
+      width: 100%;
+      flex-direction: row;
+      flex-wrap: wrap;
+      border-right: none;
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 8px;
+    }
+    .nav-category {
+      width: 100%;
+    }
+    .nav-item {
+      width: auto;
+      margin-right: 4px;
+    }
+    .info-panel, .viz-panel {
+      width: 100%;
+      min-width: 0;
+      border-right: none;
+    }
+    .canvas-wrapper {
+      height: 380px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-icon">∇f</div>
+    <span>Procedural &amp; Latent Noise Explorer</span>
+  </div>
+  <div class="header-badge">TOPOLOGICAL STUDIO v2.0 • OFFLINE READY</div>
+</header>
+
+<main class="workspace">
+  <!-- Left Sidebar: 13 Categorized Systems -->
+  <nav class="sidebar" id="sidebarNav" aria-label="Noise Systems Navigation"></nav>
+
+  <!-- Center Panel: Documentation & Mathematical Theory -->
+  <section class="info-panel" id="infoPanel"></section>
+
+  <!-- Right Panel: Parameters & Topological Viewport -->
+  <section class="viz-panel">
+    <div class="controls-card">
+      <div class="controls-header">
+        <span class="controls-title" id="paramsHeaderTitle">System Parameters</span>
+        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);" id="gridResBadge">GRID: 96×96</span>
+      </div>
+      <div class="params-grid" id="paramsContainer"></div>
+      <div class="action-row">
+        <button type="button" class="btn-generate" id="generateBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          Generate Topological Sample
+        </button>
+        <button type="button" class="btn-seed" id="randomSeedBtn" title="Randomize Seed & Regenerate">🎲 New Seed</button>
+      </div>
+    </div>
+
+    <div class="viewport-card">
+      <div class="viewport-toolbar">
+        <div class="view-toggle-group" role="group" aria-label="View Mode">
+          <button type="button" class="view-btn active" id="btnView2D" data-view="2d">Top-Down 2D</button>
+          <button type="button" class="view-btn" id="btnView3D" data-view="3d">Isometric 3D Relief</button>
+        </div>
+        <div class="palette-group">
+          <label for="paletteSelect">Palette:</label>
+          <select id="paletteSelect" class="param-select">
+            <option value="uab" selected>UAB Green &amp; Gold</option>
+            <option value="terrain">Topographic Terrain</option>
+            <option value="viridis">Viridis / Thermal</option>
+            <option value="grayscale">Monochrome Heightmap</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="canvas-wrapper" id="canvasWrapper">
+        <canvas id="noiseCanvas"></canvas>
+      </div>
+
+      <div class="telemetry-bar">
+        <div class="telemetry-group">
+          <div class="telemetry-item"><span class="lbl">COORD:</span><span class="val" id="hoverCoord">-- , --</span></div>
+          <div class="telemetry-item"><span class="lbl">ELEVATION:</span><span class="val" id="hoverValue">0.000</span></div>
+        </div>
+        <div class="telemetry-group">
+          <div class="telemetry-item"><span class="lbl">GEN TIME:</span><span class="val" id="genTimeVal">0.0 ms</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function() {
+  "use strict";
+
+  /* ============================================================================
+   * 1. DOCUMENTATION & SYSTEM METADATA (ALL 13 SYSTEMS)
+   * ========================================================================== */
+  const SYSTEMS = [
+    // Category 1: Classic Procedural Noise & Systems
+    {
+      id: "value",
+      index: "01",
+      name: "Value Noise",
+      tag: "LATTICE",
+      category: "Classic Procedural Noise & Systems",
+      catType: "classic",
+      usage: "Low-frequency heightmaps, coarse environmental variations, and quick pseudo-random adjustments where minor grid artifacts are acceptable.",
+      whatItIs: "A lattice-based noise function where pseudo-random scalar values are assigned to integer grid coordinates, and smooth interpolation curves are used to fill the space between them.",
+      howItWorks: [
+        "Space is divided into a grid of integer coordinates (x, y, z).",
+        "Each grid vertex is assigned a pseudo-random scalar value (typically between 0 and 1).",
+        "For any arbitrary sampling point inside a cell, the algorithm evaluates its fractional distance to the surrounding grid corners.",
+        "It applies a smooth polynomial interpolation curve (such as 6t⁵ - 15t⁴ + 10t³) to blend the corner values, ensuring continuous first derivatives across grid boundaries."
+      ],
+      math: {
+        basis: "Grid interpolation of scalar lattice values",
+        formula: "f(t) = 6t⁵ - 15t⁴ + 10t³ (Quintic Hermite Fade)",
+        output: "Continuous scalar field [0.0, 1.0]",
+        complexity: "O(2ⁿ) corner lookups per sample"
+      },
+      params: [
+        { id: "seed", label: "Random Seed", type: "range", min: 1, max: 9999, step: 1, default: 1337, desc: "Deterministic PRNG seed used to shuffle the 256-entry lattice permutation table. Changing the seed generates an entirely new pseudo-random scalar grid." },
+        { id: "scale", label: "Frequency Scale", type: "range", min: 2, max: 24, step: 1, default: 7, desc: "Controls the spatial density of integer lattice cells across the domain. Higher values pack more lattice vertices into view, creating finer, higher-frequency features." },
+        { id: "octaves", label: "fBm Octaves", type: "range", min: 1, max: 6, step: 1, default: 4, desc: "Number of fractional Brownian motion (fBm) noise layers summed together at doubling frequencies to add multi-scale surface detail." },
+        { id: "persistence", label: "Persistence", type: "range", min: 0.2, max: 0.85, step: 0.05, default: 0.5, desc: "Amplitude decay multiplier applied to each successive octave. Higher persistence preserves sharper high-frequency micro-detail." }
+      ]
+    },
+    {
+      id: "perlin",
+      index: "02",
+      name: "Perlin Noise",
+      tag: "GRADIENT",
+      category: "Classic Procedural Noise & Systems",
+      catType: "classic",
+      usage: "Smooth terrain elevation maps, organic textures (wood grain, clouds, marble), wind simulation vectors, and procedural camera shake.",
+      whatItIs: "A gradient noise function developed by Ken Perlin that eliminates the axis-aligned blocky artifacts of Value Noise by interpolating pseudo-random gradient vectors rather than scalar values.",
+      howItWorks: [
+        "Space is partitioned into a grid where each vertex is assigned a pseudo-random unit gradient vector.",
+        "For a given sample point, the distance vectors from the point to all surrounding grid corners are computed.",
+        "The algorithm calculates the dot product between each distance vector and its corresponding vertex gradient vector.",
+        "These dot products are smoothly interpolated using fade functions, producing a continuous, organic field whose derivative is smooth everywhere."
+      ],
+      math: {
+        basis: "Gradient dot products on a hyper-cubic grid",
+        formula: "n(x) = Σ wᵢ · (gᵢ · (x - cᵢ))",
+        output: "Zero-crossing organic gradient field",
+        complexity: "O(2ⁿ) dot products in n dimensions"
+      },
+      params: [
+        { id: "seed", label: "Random Seed", type: "range", min: 1, max: 9999, step: 1, default: 4201, desc: "Initializes the permutation table that assigns pseudo-random 2D unit gradient vectors to every integer grid corner." },
+        { id: "scale", label: "Frequency Scale", type: "range", min: 2, max: 20, step: 1, default: 5, desc: "Base spatial frequency of the gradient grid. Lower values produce broad, rolling continents; higher values yield dense hills and ridges." },
+        { id: "octaves", label: "fBm Octaves", type: "range", min: 1, max: 6, step: 1, default: 4, desc: "Sets how many harmonic layers of gradient noise are accumulated to synthesize natural fractal roughness." },
+        { id: "persistence", label: "Persistence", type: "range", min: 0.2, max: 0.85, step: 0.05, default: 0.52, desc: "Controls the relative weight of higher-frequency octaves. Values near 0.5 create balanced natural terrain; values above 0.7 produce craggy surfaces." }
+      ]
+    },
+    {
+      id: "simplex",
+      index: "03",
+      name: "Simplex Noise",
+      tag: "SIMPLEX",
+      category: "Classic Procedural Noise & Systems",
+      catType: "classic",
+      usage: "Higher-dimensional procedural generation (3D/4D noise for volumetric clouds, fluid dynamics, time-varying animations) where Perlin noise becomes computationally expensive.",
+      whatItIs: "An optimized alternative to Perlin noise designed by Ken Perlin to drastically reduce computational overhead in higher dimensions and remove directional artifacts.",
+      howItWorks: [
+        "Instead of a hyper-cubic grid (which scales exponentially as 2ⁿ in n dimensions), Simplex noise partitions space using a simplex grid—equilateral triangles in 2D and tetrahedra in 3D.",
+        "This reduces the number of corner evaluations from 2ⁿ to n+1 (e.g., from 8 corners down to 4 in 3D).",
+        "Space is skewed into a simpler coordinate system, evaluated via summation of radial kernel contribution weights from the surrounding simplex vertices, and unskewed for output."
+      ],
+      math: {
+        basis: "Radial kernel summation on a simplex tessellation",
+        formula: "F = (√(n+1) - 1)/n,  G = (1 - 1/√(n+1))/n",
+        output: "Isotropic multi-dimensional smooth noise",
+        complexity: "O(n²) scaling (3 corners in 2D, 4 in 3D)"
+      },
+      params: [
+        { id: "seed", label: "Random Seed", type: "range", min: 1, max: 9999, step: 1, default: 7789, desc: "Seeds the simplex vertex gradient lookup table for reproducible equilateral triangle tessellations." },
+        { id: "scale", label: "Frequency Scale", type: "range", min: 2, max: 20, step: 1, default: 5, desc: "Controls the fundamental wave density of the skewed simplex lattice across the sampled topology." },
+        { id: "octaves", label: "fBm Octaves", type: "range", min: 1, max: 6, step: 1, default: 4, desc: "Number of isotropic simplex harmonics layered together to build fine multi-scale detail." },
+        { id: "ridge", label: "Ridge Ridging", type: "range", min: 0, max: 1, step: 0.05, default: 0.0, desc: "Blends standard smooth fBm with folded absolute-value ridge noise (1 - |2v - 1|)², sculpting sharp alpine mountain crests." }
+      ]
+    },
+    {
+      id: "voronoi",
+      index: "04",
+      name: "Voronoi / Worley Noise",
+      tag: "CELLULAR",
+      category: "Classic Procedural Noise & Systems",
+      catType: "classic",
+      usage: "Cellular textures, organic patterns (cracked mud, stone tiling, reptile scales, biological membranes), and biome distribution zoning.",
+      whatItIs: "A distance-based cellular noise function created by Steven Worley that measures the distance from a sample point to a set of randomly distributed feature points (seed points).",
+      howItWorks: [
+        "Space is populated with scattered feature points (often randomized within jittered grid cells).",
+        "For any given sample point, the algorithm computes distances to the nearest feature points.",
+        "It evaluates scalar metrics based on these distances—most commonly F₁ (distance to the closest point) and F₂ (distance to the second-closest point).",
+        "Combining these metrics (e.g., F₂ - F₁) generates distinctive cell outlines, cellular structures, or stone-like crystal facets."
+      ],
+      math: {
+        basis: "Nearest-neighbor Euclidean/Manhattan distance fields",
+        formula: "F₁ = min‖x - pᵢ‖,  F₂ = 2nd min‖x - pᵢ‖",
+        output: "Cellular Voronoi regions & boundary ridges",
+        complexity: "O(1) via 3×3 spatial hash neighborhood"
+      },
+      params: [
+        { id: "seed", label: "Random Seed", type: "range", min: 1, max: 9999, step: 1, default: 3141, desc: "Determines the pseudo-random offset coordinates of every cellular feature seed point inside its grid cell." },
+        { id: "cells", label: "Cell Density", type: "range", min: 3, max: 18, step: 1, default: 7, desc: "Number of Voronoi seed cells along each axis (N×N total feature sites). Higher values create smaller, denser cells." },
+        { id: "jitter", label: "Point Jitter", type: "range", min: 0.0, max: 1.0, step: 0.05, default: 0.9, desc: "Controls how far feature points deviate from cell centers. At 0.0, points form a regular square lattice; at 1.0, cells become fully organic." },
+        { id: "metric", label: "Distance Metric", type: "select", options: [
+          { value: "f1", label: "F1 (Cellular Basins)" },
+          { value: "f2", label: "F2 (Secondary Facets)" },
+          { value: "f2_f1", label: "F2 - F1 (Cracked Ridges)" },
+          { value: "f1_f2", label: "F1 × F2 (Crystalline)" }
+        ], default: "f2_f1", desc: "Mathematical combination of closest (F₁) and second-closest (F₂) feature distances: F₁ forms cone pits, while F₂ - F₁ isolates cell borders." }
+      ]
+    },
+    {
+      id: "ca",
+      index: "05",
+      name: "Cellular Automata",
+      tag: "AUTOMATA",
+      category: "Classic Procedural Noise & Systems",
+      catType: "classic",
+      usage: "Cave generation (via iterative smoothing rules like B4567/S1234), dungeon layout expansion, fluid flow simulation, and fire/spread mechanics.",
+      whatItIs: "A discrete grid-based model where cells exist in one of a finite set of states and evolve simultaneously in discrete steps based on local neighborhood rules.",
+      howItWorks: [
+        "An initial grid is populated randomly with binary states (e.g., 45% chance of being a wall, 55% floor).",
+        "In each generation step, the algorithm counts the number of neighboring wall tiles for every cell (using Moore or von Neumann neighborhoods).",
+        "If a cell's neighbor count exceeds a threshold (e.g., ≥ 5 walls), it becomes a wall; otherwise, it becomes empty floor space.",
+        "Repeating this process for 4–5 iterations naturally coalesces random noise into organic cave networks."
+      ],
+      math: {
+        basis: "Discrete 8-neighbor Moore transition rules",
+        formula: "Sₜ₊₁(x,y) = 1 if Σ N₈(x,y) ≥ T else 0",
+        output: "Smoothed cave caverns & connected chambers",
+        complexity: "O(W · H · k) over k iterations"
+      },
+      params: [
+        { id: "seed", label: "Random Seed", type: "range", min: 1, max: 9999, step: 1, default: 8080, desc: "Controls the initial Bernoulli coin-flip state (wall vs. open floor) of every cell at generation t = 0." },
+        { id: "fillProb", label: "Initial Wall Fill %", type: "range", min: 0.32, max: 0.62, step: 0.02, default: 0.46, desc: "Probability that a cell starts as solid rock. Values around 0.45–0.48 yield balanced, navigable cavern systems." },
+        { id: "iterations", label: "Smoothing Iterations", type: "range", min: 1, max: 10, step: 1, default: 5, desc: "Number of synchronous cellular evolution passes. More passes erode isolated pillars and smooth cavern walls." },
+        { id: "threshold", label: "Wall Birth Threshold", type: "range", min: 4, max: 6, step: 1, default: 5, desc: "Minimum number of solid neighbors (out of 8 in the Moore neighborhood) required for a cell to solidify into a wall." }
+      ]
+    },
+    {
+      id: "lsystem",
+      index: "06",
+      name: "L-Systems (Lindenmayer)",
+      tag: "GRAMMAR",
+      category: "Classic Procedural Noise & Systems",
+      catType: "classic",
+      usage: "Procedural botany (trees, ferns, roots, flowers) and fractal architecture generation.",
+      whatItIs: "A parallel string-rewriting grammar introduced by Aristid Lindenmayer to mathematically formalize and model plant development and biological growth.",
+      howItWorks: [
+        "Defined by an initial string axiom (e.g., F) and a set of replacement production rules (e.g., F → F[+F]F[-F]F).",
+        "Over multiple iteration steps, the grammar rules expand the string into a much longer sequence of symbols.",
+        "The final string is interpreted as a turtle graphics script where symbols dictate physical actions: F draws forward, + / - turn the heading, [ pushes the current transformation matrix to a stack, and ] pops it to branch outwards."
+      ],
+      math: {
+        basis: "Context-free parallel string rewriting & Turtle stack",
+        formula: "G = (V, ω, P) → Push '[' / Pop ']' state matrix",
+        output: "Self-similar fractal branching geometry",
+        complexity: "Exponential string expansion O(bᵈ)"
+      },
+      params: [
+        { id: "seed", label: "Organic Jitter Seed", type: "range", min: 1, max: 9999, step: 1, default: 2026, desc: "Introduces subtle stochastic angle perturbations at each branch node so flora appears naturally wind-sculpted rather than rigid." },
+        { id: "iterations", label: "Grammar Iterations", type: "range", min: 2, max: 5, step: 1, default: 4, desc: "Number of parallel string-rewriting generations applied to the axiom, exponentially increasing twig and leaf recursion depth." },
+        { id: "angle", label: "Branch Angle (deg)", type: "range", min: 12, max: 45, step: 1, default: 25, desc: "Turtle rotation angle δ (in degrees) executed upon encountering '+' or '-' symbols, governing canopy spread." },
+        { id: "preset", label: "Botanical Preset", type: "select", options: [
+          { value: "tree", label: "Fractal Canopy Tree" },
+          { value: "fern", label: "Barnsley-Style Fern" },
+          { value: "bush", label: "Stochastic Shrub" }
+        ], default: "tree", desc: "Selects the formal axiom and production rule set (e.g., F → FF+[+F-F-F]-[-F+F+F] for trees vs. X-rule fronds for ferns)." }
+      ]
+    },
+    {
+      id: "wfc",
+      index: "07",
+      name: "Wave Function Collapse",
+      tag: "SOLVER",
+      category: "Classic Procedural Noise & Systems",
+      catType: "classic",
+      usage: "Automated dungeon generation, tile-based city layouts, architectural interiors, and texture synthesis from small example inputs.",
+      whatItIs: "A constraint-solving algorithm inspired by quantum mechanics that generates patterns by enforcing local adjacency rules across a grid.",
+      howItWorks: [
+        "Every cell in the output grid starts in a state of quantum superposition containing all possible tile variations.",
+        "The algorithm finds the cell with the lowest entropy (fewest remaining valid tile options), collapses it to a definite tile, and propagates the resulting constraints to its neighbors.",
+        "If a contradiction occurs (a cell runs out of valid options), the algorithm backtracks or restarts.",
+        "By deriving rules from a sample input image or designer constraints, WFC guarantees that every adjacent tile transition strictly obeys valid connection rules."
+      ],
+      math: {
+        basis: "Shannon entropy minimization & AC-3 constraint propagation",
+        formula: "H(c) = -Σ pᵢ log₂(pᵢ) → Collapse min H(c)",
+        output: "Socket-validated modular tile topology",
+        complexity: "Iterative constraint propagation across grid"
+      },
+      params: [
+        { id: "seed", label: "Collapse Seed", type: "range", min: 1, max: 9999, step: 1, default: 5150, desc: "Controls tie-breaking entropy selection and weighted tile sampling during each wave-function collapse step." },
+        { id: "gridSize", label: "Tile Grid Size", type: "range", min: 8, max: 20, step: 2, default: 14, desc: "Dimensions (G×G) of the discrete modular tile grid solved via AC-3 constraint propagation." },
+        { id: "ruleset", label: "Adjacency Ruleset", type: "select", options: [
+          { value: "circuit", label: "Circuit / Dungeon Corridors" },
+          { value: "coast", label: "Island Coastline & Elevation" }
+        ], default: "circuit", desc: "Defines the socket compatibility matrix governing which tile edges (paths, corners, coastlines, highlands) may legally connect." },
+        { id: "roadBias", label: "Path Connectivity Bias", type: "range", min: 0.2, max: 0.9, step: 0.1, default: 0.6, desc: "Adjusts the probability weights of connected corridor/highland tiles relative to empty ground or deep water tiles." }
+      ]
+    },
+
+    // Category 2: Latent Space & Specialized Noise
+    {
+      id: "gaussian",
+      index: "08",
+      name: "Gaussian Latent Noise",
+      tag: "TENSOR",
+      category: "Latent Space & Specialized Noise",
+      catType: "latent",
+      usage: "Base starting entropy tensor for diffusion models (Stable Diffusion) and GANs, initializing latent channels before iterative denoising.",
+      whatItIs: "The foundational baseline noise used to initialize diffusion models and GANs. It is a multi-dimensional tensor (e.g., 64×64×4) where every individual value is independently sampled from a standard normal distribution (μ = 0, σ = 1).",
+      howItWorks: [
+        "Acts as the 'prime chaos' or initial starting point of maximum entropy across the latent tensor dimensions.",
+        "Each latent coordinate is sampled independently via Box-Muller transform from a normal bell curve.",
+        "The model's neural network iteratively subtracts and refines this noise over multiple steps, guided by a prompt or conditioning vector, until structured data emerges in the decoder."
+      ],
+      math: {
+        basis: "Independent Identically Distributed (i.i.d.) Normal Tensor",
+        formula: "z ~ N(μ, σ²I),  z₀ = √(-2 ln U₁) cos(2π U₂)",
+        output: "Uncorrelated high-entropy latent tensor field",
+        complexity: "O(1) per latent tensor element"
+      },
+      params: [
+        { id: "seed", label: "Latent Seed", type: "range", min: 1, max: 9999, step: 1, default: 1024, desc: "Initializes the Box-Muller normal RNG stream used to populate every independent entry of the latent tensor." },
+        { id: "sigma", label: "Std Deviation (σ)", type: "range", min: 0.2, max: 1.5, step: 0.05, default: 1.0, desc: "Scales the variance of the normal distribution. Standard diffusion models expect σ = 1.0; lower values reduce initial contrast." },
+        { id: "mean", label: "Mean Shift (μ)", type: "range", min: -0.4, max: 0.4, step: 0.05, default: 0.0, desc: "Applies a global DC offset to the latent tensor, shifting overall brightness or semantic bias in the decoded image." },
+        { id: "channel", label: "Latent Channel View", type: "select", options: [
+          { value: "0", label: "Channel 0 (Luminance/Structure)" },
+          { value: "1", label: "Channel 1 (Cyan-Red Chromatic)" },
+          { value: "mix", label: "Norm Magnitude ‖z‖₂" }
+        ], default: "0", desc: "Inspects an individual latent feature channel or computes the L2 Euclidean norm across channels." }
+      ]
+    },
+    {
+      id: "slerp",
+      index: "09",
+      name: "Spherical / Slerp Noise",
+      tag: "MANIFOLD",
+      category: "Latent Space & Specialized Noise",
+      catType: "latent",
+      usage: "Smooth 'latent walks', morphing seamlessly between distinct generated assets, animations, or character traits without muddy intermediate frames.",
+      whatItIs: "A variation of latent noise generation where vectors are sampled or transitioned across the surface of a high-dimensional hypersphere rather than a standard flat Euclidean grid.",
+      howItWorks: [
+        "In high-dimensional latent spaces, standard linear interpolation (LERP) causes vectors to shrink toward the origin, dropping energy and quality.",
+        "Slerp maintains a constant vector magnitude by moving along a great-circle geodesic arc path between two unit-normalized Gaussian tensors.",
+        "When applied to latent noise seeds, it ensures every intermediate interpolation step retains the exact statistical variance expected by the decoder."
+      ],
+      math: {
+        basis: "Hyperspherical great-circle geodesic interpolation",
+        formula: "Slerp(z₁, z₂; t) = [sin((1-t)Ω)/sin Ω]z₁ + [sin(tΩ)/sin Ω]z₂",
+        output: "Constant-norm latent trajectory manifold",
+        complexity: "Preserves ‖z(t)‖ = √d across all t ∈ [0,1]"
+      },
+      params: [
+        { id: "seedA", label: "Anchor Tensor A Seed", type: "range", min: 1, max: 5000, step: 1, default: 111, desc: "Generates the starting unit-normalized latent tensor z₁ at interpolation endpoint t = 0.0." },
+        { id: "seedB", label: "Anchor Tensor B Seed", type: "range", min: 5001, max: 9999, step: 1, default: 8888, desc: "Generates the destination unit-normalized latent tensor z₂ at interpolation endpoint t = 1.0." },
+        { id: "t", label: "Interpolation Step (t)", type: "range", min: 0.0, max: 1.0, step: 0.02, default: 0.5, desc: "Geodesic arc parameter t ∈ [0, 1] traversing the hypersphere between z₁ and z₂ while keeping vector energy constant." },
+        { id: "smoothness", label: "Spatial Coherence", type: "range", min: 1, max: 8, step: 1, default: 4, desc: "Controls the spatial correlation frequency of the anchor manifolds so morphing transitions are visually legible." }
+      ]
+    },
+    {
+      id: "perlinflow",
+      index: "10",
+      name: "Perlin-Flow Latent Noise",
+      tag: "HYBRID",
+      category: "Latent Space & Specialized Noise",
+      catType: "latent",
+      usage: "Enforcing spatial coherence, directional flow, and repeating environmental layouts in AI-generated textures and video frames.",
+      whatItIs: "A hybrid technique where classical procedural noise (like Perlin or Simplex noise) is injected into or used to guide the trajectory of latent noise tensors during the generation process.",
+      howItWorks: [
+        "Instead of pure independent Gaussian noise across every latent pixel, a low-frequency Perlin noise field is mapped across the latent dimensions.",
+        "This structured prior is blended with high-frequency Gaussian noise via variance-preserving mixing.",
+        "This forces adjacent regions of the latent space to correlate smoothly, resulting in coherent directional layouts and fluid motion vectors in the final output."
+      ],
+      math: {
+        basis: "Variance-preserving spatial-latent blending",
+        formula: "z_hybrid = √(1 - α²)·z_gauss + α·z_perlin",
+        output: "Spatially correlated structured latent field",
+        complexity: "Combines macro-structure with micro-entropy"
+      },
+      params: [
+        { id: "seed", label: "Hybrid Seed", type: "range", min: 1, max: 9999, step: 1, default: 3030, desc: "Simultaneously seeds the macro Perlin gradient field, domain warp field, and micro Gaussian noise tensor." },
+        { id: "alpha", label: "Perlin Flow Blend (α)", type: "range", min: 0.0, max: 1.0, step: 0.05, default: 0.75, desc: "Variance-preserving mixing weight α. At 0.0, the field is pure i.i.d. Gaussian chaos; at 1.0, it follows pure Perlin structure." },
+        { id: "flowFreq", label: "Macro Flow Scale", type: "range", min: 2, max: 12, step: 1, default: 4, desc: "Spatial frequency of the underlying Perlin structural prior guiding adjacent latent neighborhoods." },
+        { id: "warp", label: "Domain Advection Warp", type: "range", min: 0.0, max: 1.5, step: 0.1, default: 0.6, desc: "Displaces Perlin lookup coordinates using secondary Simplex noise, creating swirling fluid-like latent trajectories." }
+      ]
+    },
+    {
+      id: "truncated",
+      index: "11",
+      name: "Truncated Latent Noise",
+      tag: "BOUNDED",
+      category: "Latent Space & Specialized Noise",
+      catType: "latent",
+      usage: "Controlling the fidelity-vs-diversity trade-off in GANs (StyleGAN) and diffusion samplers to prevent outlier visual artifacts.",
+      whatItIs: "A statistical constraint applied to latent noise generation to trade off absolute variety for higher structural coherence and quality.",
+      howItWorks: [
+        "During sampling, the Gaussian distribution of the latent noise is 'truncated' using a threshold parameter ψ (psi).",
+        "Any random values falling outside the specified standard deviation threshold (e.g., beyond ±1.5σ) are clipped or rejection-resampled closer to the mean.",
+        "This ensures the generator stays tightly clustered around the most 'typical' and well-learned features of its training dataset, avoiding distorted outputs."
+      ],
+      math: {
+        basis: "Rejection-sampled / Clipped Normal Distribution",
+        formula: "z_trunc = resample(z ~ N(0,1))  s.t.  |z| ≤ ψ·σ",
+        output: "High-density core manifold sample",
+        complexity: "ψ → 0 collapses toward dataset mean"
+      },
+      params: [
+        { id: "seed", label: "Sampling Seed", type: "range", min: 1, max: 9999, step: 1, default: 6464, desc: "Seeds the Gaussian proposal distribution prior to applying the truncation boundary filter." },
+        { id: "psi", label: "Truncation Threshold (ψ)", type: "range", min: 0.2, max: 2.5, step: 0.05, default: 0.85, desc: "Maximum allowed standard deviation |z| ≤ ψ. Smaller ψ values pull samples toward the dataset mean for safer, higher-fidelity outputs." },
+        { id: "coherence", label: "Latent Kernel Smooth", type: "range", min: 1, max: 6, step: 1, default: 3, desc: "Spatial pooling factor across latent cells before bicubic/quintic upsampling to visualize continuous feature plateaus." },
+        { id: "mode", label: "Boundary Handling", type: "select", options: [
+          { value: "resample", label: "Rejection Resample (True Truncated)" },
+          { value: "clamp", label: "Hard Clamping (Clipped Tails)" }
+        ], default: "resample", desc: "Rejection resampling redraws out-of-bounds values to preserve a smooth bell core; hard clamping flattens peaks at ±ψ." }
+      ]
+    },
+    {
+      id: "curl",
+      index: "12",
+      name: "Curl Noise",
+      tag: "VECTOR",
+      category: "Latent Space & Specialized Noise",
+      catType: "latent",
+      usage: "Simulating realistic smoke, fire, fluid turbulence, magic particle ribbons, and incompressible aerodynamic flow without losing mass or volume.",
+      whatItIs: "A divergence-free vector field noise function derived by taking the mathematical curl (∇ × Ψ) of a base scalar noise potential (usually Perlin or Simplex).",
+      howItWorks: [
+        "Standard gradient noise fields push points directly up or down slopes, causing particles to get stuck on peaks or fall into sinks.",
+        "Curl noise computes spatial partial derivatives (∂Ψ/∂y, -∂Ψ/∂x) via finite differences on a smooth scalar potential field.",
+        "Because the divergence of a curl field is identically zero (∇ · (∇ × Ψ) = 0), particles advected through the field swirl continuously in eddies without ever clumping together."
+      ],
+      math: {
+        basis: "Divergence-free differential operator (∇ × Ψ)",
+        formula: "v(x,y) = ( ∂Ψ/∂y , -∂Ψ/∂x ),   ∇ · v ≡ 0",
+        output: "Incompressible rotational vortex vector field",
+        complexity: "4 finite-difference potential evaluations/pt"
+      },
+      params: [
+        { id: "seed", label: "Potential Field Seed", type: "range", min: 1, max: 9999, step: 1, default: 9001, desc: "Seeds the underlying Simplex scalar potential function Ψ(x, y) whose partial derivatives form the rotational velocity field." },
+        { id: "scale", label: "Eddy Frequency", type: "range", min: 2, max: 10, step: 1, default: 4, desc: "Controls the size and count of rotational vortices across the fluid domain." },
+        { id: "vorticity", label: "Streamline Length", type: "range", min: 8, max: 40, step: 2, default: 24, desc: "Number of Euler integration steps each massless tracer particle is advected through the divergence-free velocity field." },
+        { id: "particles", label: "Tracer Streamlines", type: "range", min: 60, max: 260, step: 20, default: 160, desc: "Total number of flow ribbons seeded across the domain to visualize incompressible swirling currents." }
+      ]
+    },
+    {
+      id: "blue",
+      index: "13",
+      name: "Blue Noise",
+      tag: "SPECTRAL",
+      category: "Latent Space & Specialized Noise",
+      catType: "latent",
+      usage: "High-frequency dithering, screen-space ray marching, stochastic anti-aliasing, foliage placement, and low-discrepancy Monte Carlo sampling.",
+      whatItIs: "A spatial noise distribution characterized by high-frequency randomness with a complete absence of low-frequency clumping (meaning points are evenly spaced yet pseudo-random).",
+      howItWorks: [
+        "Generated via Bridson's Poisson-disk dart-throwing algorithm or void-and-cluster optimization.",
+        "Enforces a strict minimum exclusion radius r between any two active sample points while packing the domain densely.",
+        "Human eyes perceive blue noise artifacts as fine, uniform grain rather than ugly low-frequency clumps or regular grid moiré."
+      ],
+      math: {
+        basis: "Poisson-disk spectral energy distribution",
+        formula: "∀ i ≠ j : ‖pᵢ - pⱼ‖₂ ≥ r_min,  P(f) ∝ f² (High-pass)",
+        output: "Uniformly spaced, clump-free point distribution",
+        complexity: "O(N) via Bridson's spatial acceleration grid"
+      },
+      params: [
+        { id: "seed", label: "Dart-Throw Seed", type: "range", min: 1, max: 9999, step: 1, default: 4096, desc: "Seeds the initial active sample and annular candidate dart-throwing positions in Bridson's Poisson-disk algorithm." },
+        { id: "minDist", label: "Min Exclusion Radius", type: "range", min: 0.025, max: 0.09, step: 0.005, default: 0.045, desc: "Minimum guaranteed Euclidean distance r_min between any two points, eliminating low-frequency clustering." },
+        { id: "attempts", label: "Candidate K-Samples", type: "range", min: 10, max: 40, step: 5, default: 25, desc: "Number of annular candidate points tested around each active point before retirement; higher values pack points more tightly." },
+        { id: "falloff", label: "Kernel Halo Radius", type: "range", min: 0.5, max: 2.0, step: 0.1, default: 1.1, desc: "Controls the Gaussian radial basis splat width around each Poisson sample when constructing the 3D relief heightfield." }
+      ]
+    }
+  ];
+
+  /* ============================================================================
+   * 2. DETERMINISTIC PRNG & NOISE MATH KERNELS
+   * ========================================================================== */
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function() {
+      a |= 0;
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function fade(t) {
+    return t * t * t * (t * (t * 6 - 15) + 10);
+  }
+
+  function lerp(a, b, t) {
+    return a + t * (b - a);
+  }
+
+  function clamp01(v) {
+    return v < 0 ? 0 : (v > 1 ? 1 : v);
+  }
+
+  // Build permutation table from seed
+  function createPermTable(seed) {
+    const rng = mulberry32(seed);
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const tmp = p[i];
+      p[i] = p[j];
+      p[j] = tmp;
+    }
+    const perm = new Uint8Array(512);
+    for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+    return perm;
+  }
+
+  // 2D Value Noise
+  function makeValueNoise2D(seed) {
+    const perm = createPermTable(seed);
+    function hashVal(ix, iy) {
+      return perm[(perm[ix & 255] + (iy & 255)) & 255] / 255.0;
+    }
+    return function(x, y) {
+      const ix = Math.floor(x);
+      const iy = Math.floor(y);
+      const fx = fade(x - ix);
+      const fy = fade(y - iy);
+      const v00 = hashVal(ix, iy);
+      const v10 = hashVal(ix + 1, iy);
+      const v01 = hashVal(ix, iy + 1);
+      const v11 = hashVal(ix + 1, iy + 1);
+      return lerp(lerp(v00, v10, fx), lerp(v01, v11, fx), fy);
+    };
+  }
+
+  // 2D Perlin Gradient Noise
+  const GRADS_2D = [
+    [1, 0], [-1, 0], [0, 1], [0, -1],
+    [0.7071, 0.7071], [-0.7071, 0.7071], [0.7071, -0.7071], [-0.7071, -0.7071]
+  ];
+
+  function makePerlinNoise2D(seed) {
+    const perm = createPermTable(seed);
+    function gradDot(ix, iy, dx, dy) {
+      const g = GRADS_2D[perm[(perm[ix & 255] + (iy & 255)) & 255] & 7];
+      return g[0] * dx + g[1] * dy;
+    }
+    return function(x, y) {
+      const ix = Math.floor(x);
+      const iy = Math.floor(y);
+      const dx = x - ix;
+      const dy = y - iy;
+      const u = fade(dx);
+      const v = fade(dy);
+      const n00 = gradDot(ix, iy, dx, dy);
+      const n10 = gradDot(ix + 1, iy, dx - 1, dy);
+      const n01 = gradDot(ix, iy + 1, dx, dy - 1);
+      const n11 = gradDot(ix + 1, iy + 1, dx - 1, dy - 1);
+      const val = lerp(lerp(n00, n10, u), lerp(n01, n11, u), v);
+      return clamp01(val * 0.7071 + 0.5);
+    };
+  }
+
+  // 2D Simplex Noise
+  function makeSimplexNoise2D(seed) {
+    const perm = createPermTable(seed);
+    const F2 = 0.5 * (Math.sqrt(3.0) - 1.0);
+    const G2 = (3.0 - Math.sqrt(3.0)) / 6.0;
+
+    return function(xin, yin) {
+      let n0 = 0, n1 = 0, n2 = 0;
+      const s = (xin + yin) * F2;
+      const i = Math.floor(xin + s);
+      const j = Math.floor(yin + s);
+      const t = (i + j) * G2;
+      const X0 = i - t;
+      const Y0 = j - t;
+      const x0 = xin - X0;
+      const y0 = yin - Y0;
+
+      let i1, j1;
+      if (x0 > y0) { i1 = 1; j1 = 0; }
+      else { i1 = 0; j1 = 1; }
+
+      const x1 = x0 - i1 + G2;
+      const y1 = y0 - j1 + G2;
+      const x2 = x0 - 1.0 + 2.0 * G2;
+      const y2 = y0 - 1.0 + 2.0 * G2;
+
+      const ii = i & 255;
+      const jj = j & 255;
+      const gi0 = perm[ii + perm[jj]] & 7;
+      const gi1 = perm[ii + i1 + perm[jj + j1]] & 7;
+      const gi2 = perm[ii + 1 + perm[jj + 1]] & 7;
+
+      let t0 = 0.5 - x0 * x0 - y0 * y0;
+      if (t0 >= 0) {
+        t0 *= t0;
+        n0 = t0 * t0 * (GRADS_2D[gi0][0] * x0 + GRADS_2D[gi0][1] * y0);
+      }
+      let t1 = 0.5 - x1 * x1 - y1 * y1;
+      if (t1 >= 0) {
+        t1 *= t1;
+        n1 = t1 * t1 * (GRADS_2D[gi1][0] * x1 + GRADS_2D[gi1][1] * y1);
+      }
+      let t2 = 0.5 - x2 * x2 - y2 * y2;
+      if (t2 >= 0) {
+        t2 *= t2;
+        n2 = t2 * t2 * (GRADS_2D[gi2][0] * x2 + GRADS_2D[gi2][1] * y2);
+      }
+      return clamp01(35.0 * (n0 + n1 + n2) + 0.5);
+    };
+  }
+
+  // fBm helper
+  function sampleFbm(noiseFn, x, y, octaves, persistence) {
+    let total = 0;
+    let freq = 1;
+    let amp = 1;
+    let maxAmp = 0;
+    for (let o = 0; o < octaves; o++) {
+      total += noiseFn(x * freq, y * freq) * amp;
+      maxAmp += amp;
+      amp *= persistence;
+      freq *= 2.02;
+    }
+    return total / maxAmp;
+  }
+
+  // Box-Muller Gaussian RNG
+  function makeGaussianRng(seed) {
+    const rng = mulberry32(seed);
+    let spare = null;
+    return function() {
+      if (spare !== null) {
+        const val = spare;
+        spare = null;
+        return val;
+      }
+      let u = 0, v = 0;
+      while (u === 0) u = rng();
+      while (v === 0) v = rng();
+      const mag = Math.sqrt(-2.0 * Math.log(u));
+      spare = mag * Math.sin(2.0 * Math.PI * v);
+      return mag * Math.cos(2.0 * Math.PI * v);
+    };
+  }
+
+  /* ============================================================================
+   * 3. SYSTEM GENERATORS (PRODUCING TOPOLOGICAL FIELD & STRUCTURAL ARTIFACTS)
+   * ========================================================================== */
+  const FIELD_RES = 84; // High-detail crisp resolution for both 2D and 3D Isometric mesh
+
+  function generateSystemData(sysId, p) {
+    const N = FIELD_RES;
+    const field = new Float32Array(N * N);
+    const meta = { type: "scalar", N };
+
+    if (sysId === "value") {
+      const fn = makeValueNoise2D(p.seed);
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const nx = (x / N) * p.scale;
+          const ny = (y / N) * p.scale;
+          field[y * N + x] = sampleFbm(fn, nx, ny, p.octaves, p.persistence);
+        }
+      }
+    }
+    else if (sysId === "perlin") {
+      const fn = makePerlinNoise2D(p.seed);
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const nx = (x / N) * p.scale;
+          const ny = (y / N) * p.scale;
+          field[y * N + x] = sampleFbm(fn, nx, ny, p.octaves, p.persistence);
+        }
+      }
+    }
+    else if (sysId === "simplex") {
+      const fn = makeSimplexNoise2D(p.seed);
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const nx = (x / N) * p.scale;
+          const ny = (y / N) * p.scale;
+          let v = sampleFbm(fn, nx, ny, p.octaves, 0.5);
+          if (p.ridge > 0) {
+            const r = 1.0 - Math.abs(v * 2.0 - 1.0);
+            v = lerp(v, r * r, p.ridge);
+          }
+          field[y * N + x] = clamp01(v);
+        }
+      }
+    }
+    else if (sysId === "voronoi") {
+      const cells = p.cells;
+      const rng = mulberry32(p.seed);
+      const pts = new Float32Array(cells * cells * 2);
+      for (let cy = 0; cy < cells; cy++) {
+        for (let cx = 0; cx < cells; cx++) {
+          const idx = (cy * cells + cx) * 2;
+          pts[idx] = cx + 0.5 + (rng() - 0.5) * p.jitter;
+          pts[idx + 1] = cy + 0.5 + (rng() - 0.5) * p.jitter;
+        }
+      }
+      const featurePoints = [];
+      for (let i = 0; i < pts.length; i += 2) {
+        featurePoints.push({ x: pts[i] / cells, y: pts[i + 1] / cells });
+      }
+      meta.points = featurePoints;
+
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const px = (x / N) * cells;
+          const py = (y / N) * cells;
+          const gx = Math.floor(px);
+          const gy = Math.floor(py);
+          let f1 = 999, f2 = 999;
+
+          for (let oy = -1; oy <= 1; oy++) {
+            for (let ox = -1; ox <= 1; ox++) {
+              const nx = (gx + ox + cells) % cells;
+              const ny = (gy + oy + cells) % cells;
+              const idx = (ny * cells + nx) * 2;
+              const fx = pts[idx] + (gx + ox - nx);
+              const fy = pts[idx + 1] + (gy + oy - ny);
+              const d = Math.hypot(px - fx, py - fy);
+              if (d < f1) { f2 = f1; f1 = d; }
+              else if (d < f2) { f2 = d; }
+            }
+          }
+          let val = 0;
+          if (p.metric === "f1") val = clamp01(f1 * 1.15);
+          else if (p.metric === "f2") val = clamp01(f2 * 0.85);
+          else if (p.metric === "f2_f1") val = clamp01((f2 - f1) * 1.4);
+          else val = clamp01(f1 * f2 * 1.2);
+          field[y * N + x] = val;
+        }
+      }
+    }
+    else if (sysId === "ca") {
+      meta.type = "discrete";
+      const rng = mulberry32(p.seed);
+      let grid = new Uint8Array(N * N);
+      for (let i = 0; i < N * N; i++) {
+        grid[i] = rng() < p.fillProb ? 1 : 0;
+      }
+      // Keep border walls solid for authentic cave containment
+      for (let i = 0; i < N; i++) {
+        grid[i] = 1;
+        grid[(N - 1) * N + i] = 1;
+        grid[i * N] = 1;
+        grid[i * N + (N - 1)] = 1;
+      }
+      for (let iter = 0; iter < p.iterations; iter++) {
+        const next = new Uint8Array(N * N);
+        for (let y = 0; y < N; y++) {
+          for (let x = 0; x < N; x++) {
+            if (x === 0 || y === 0 || x === N - 1 || y === N - 1) {
+              next[y * N + x] = 1;
+              continue;
+            }
+            let walls = 0;
+            for (let dy = -1; dy <= 1; dy++) {
+              for (let dx = -1; dx <= 1; dx++) {
+                if (dx === 0 && dy === 0) continue;
+                walls += grid[(y + dy) * N + (x + dx)];
+              }
+            }
+            next[y * N + x] = walls >= p.threshold ? 1 : 0;
+          }
+        }
+        grid = next;
+      }
+      // Compute soft wall elevation + floor depth for rich 3D relief
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const isWall = grid[y * N + x] === 1;
+          let sum = 0;
+          for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+              const nx = Math.max(0, Math.min(N - 1, x + dx));
+              const ny = Math.max(0, Math.min(N - 1, y + dy));
+              sum += grid[ny * N + nx];
+            }
+          }
+          field[y * N + x] = isWall ? (0.65 + (sum / 9) * 0.35) : (0.12 + (sum / 9) * 0.18);
+        }
+      }
+    }
+    else if (sysId === "lsystem") {
+      meta.type = "lsystem";
+      const rng = mulberry32(p.seed);
+      let str = "F";
+      const rules = {
+        tree: { F: "FF+[+F-F-F]-[-F+F+F]" },
+        fern: { X: "F+[[X]-X]-F[-FX]+X", F: "FF" },
+        bush: { F: "F[+F]F[-F][F]" }
+      };
+      if (p.preset === "fern") str = "X";
+      const ruleSet = rules[p.preset];
+      const maxIter = p.preset === "tree" ? Math.min(p.iterations, 4) : p.iterations;
+
+      for (let i = 0; i < maxIter; i++) {
+        let next = "";
+        for (let c = 0; c < str.length; c++) {
+          const ch = str[c];
+          next += ruleSet[ch] || ch;
+        }
+        str = next;
+        if (str.length > 28000) break;
+      }
+
+      const segments = [];
+      const stack = [];
+      let x = 0, y = 0, z = 0;
+      let angleZ = -Math.PI / 2;
+      let angleY = 0;
+      let depth = 0;
+      const rad = (p.angle * Math.PI) / 180;
+
+      for (let i = 0; i < str.length; i++) {
+        const ch = str[i];
+        if (ch === "F") {
+          const jitter = (rng() - 0.5) * 0.14;
+          const stepLen = 1.0 * Math.pow(0.86, depth * 0.35);
+          const nx = x + Math.cos(angleZ + jitter) * Math.cos(angleY) * stepLen;
+          const ny = y + Math.sin(angleZ + jitter) * stepLen;
+          const nz = z + Math.sin(angleY) * stepLen;
+          segments.push({ x1: x, y1: y, z1: z, x2: nx, y2: ny, z2: nz, depth });
+          x = nx; y = ny; z = nz;
+        } else if (ch === "+") {
+          angleZ += rad * (0.85 + rng() * 0.3);
+          angleY += rad * 0.45 * (rng() - 0.5);
+        } else if (ch === "-") {
+          angleZ -= rad * (0.85 + rng() * 0.3);
+          angleY -= rad * 0.45 * (rng() - 0.5);
+        } else if (ch === "[") {
+          stack.push({ x, y, z, angleZ, angleY, depth });
+          depth++;
+        } else if (ch === "]") {
+          if (stack.length > 0) {
+            const st = stack.pop();
+            x = st.x; y = st.y; z = st.z;
+            angleZ = st.angleZ; angleY = st.angleY; depth = st.depth;
+          }
+        }
+      }
+
+      // Normalize bounds
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity, maxD = 1;
+      for (const s of segments) {
+        minX = Math.min(minX, s.x1, s.x2);
+        maxX = Math.max(maxX, s.x1, s.x2);
+        minY = Math.min(minY, s.y1, s.y2);
+        maxY = Math.max(maxY, s.y1, s.y2);
+        minZ = Math.min(minZ, s.z1, s.z2);
+        maxZ = Math.max(maxZ, s.z1, s.z2);
+        maxD = Math.max(maxD, s.depth);
+      }
+      const spanX = Math.max(maxX - minX, 1e-4);
+      const spanY = Math.max(maxY - minY, 1e-4);
+      const spanZ = Math.max(maxZ - minZ, 1e-4);
+      const span = Math.max(spanX, spanY, spanZ, 1);
+      const midX = (minX + maxX) * 0.5;
+      const midY = (minY + maxY) * 0.5;
+      const midZ = (minZ + maxZ) * 0.5;
+
+      for (const s of segments) {
+        // Centered normalized coordinates in [-0.5, 0.5] across all axes
+        s.nx1 = (s.x1 - midX) / span;
+        s.ny1 = (s.y1 - midY) / span;
+        s.nz1 = (s.z1 - midZ) / span;
+        s.nx2 = (s.x2 - midX) / span;
+        s.ny2 = (s.y2 - midY) / span;
+        s.nz2 = (s.z2 - midZ) / span;
+        // Ground-referenced height [0, 1] where maxY (root base) = 0 and minY (canopy tip) = 1
+        s.h1 = clamp01((maxY - s.y1) / span);
+        s.h2 = clamp01((maxY - s.y2) / span);
+        s.normDepth = s.depth / maxD;
+
+        // Rasterize segment samples onto the underlying scalar field for accurate hover elevation telemetry
+        const steps = 4;
+        for (let st = 0; st <= steps; st++) {
+          const t = st / steps;
+          const sx = lerp(s.nx1, s.nx2, t) + 0.5;
+          const sy = lerp(s.ny1, s.ny2, t) + 0.5;
+          const gx = Math.min(N - 1, Math.max(0, Math.floor(sx * (N - 1))));
+          const gy = Math.min(N - 1, Math.max(0, Math.floor(sy * (N - 1))));
+          field[gy * N + gx] = Math.max(field[gy * N + gx], 0.35 + 0.65 * s.normDepth);
+        }
+      }
+      meta.segments = segments;
+    }
+    else if (sysId === "wfc") {
+      meta.type = "wfc";
+      const G = p.gridSize;
+      const rng = mulberry32(p.seed);
+      // Tile definitions: sockets [Top, Right, Bottom, Left]
+      // 0: Grass/Empty, 1: Road/Path, 2: Water/Wall
+      const TILES = p.ruleset === "circuit" ? [
+        { id: 0, name: "Empty", sockets: [0,0,0,0], weight: 1.2 - p.roadBias * 0.6, elev: 0.15 },
+        { id: 1, name: "Straight V", sockets: [1,0,1,0], weight: p.roadBias, elev: 0.55 },
+        { id: 2, name: "Straight H", sockets: [0,1,0,1], weight: p.roadBias, elev: 0.55 },
+        { id: 3, name: "Corner NE", sockets: [1,1,0,0], weight: p.roadBias * 0.8, elev: 0.62 },
+        { id: 4, name: "Corner SE", sockets: [0,1,1,0], weight: p.roadBias * 0.8, elev: 0.62 },
+        { id: 5, name: "Corner SW", sockets: [0,0,1,1], weight: p.roadBias * 0.8, elev: 0.62 },
+        { id: 6, name: "Corner NW", sockets: [1,0,0,1], weight: p.roadBias * 0.8, elev: 0.62 },
+        { id: 7, name: "Cross", sockets: [1,1,1,1], weight: p.roadBias * 0.45, elev: 0.88 }
+      ] : [
+        { id: 0, name: "Deep Water", sockets: [0,0,0,0], weight: 0.8, elev: 0.12 },
+        { id: 1, name: "Coast N", sockets: [1,0,0,0], weight: 0.7, elev: 0.38 },
+        { id: 2, name: "Coast E", sockets: [0,1,0,0], weight: 0.7, elev: 0.38 },
+        { id: 3, name: "Coast S", sockets: [0,0,1,0], weight: 0.7, elev: 0.38 },
+        { id: 4, name: "Coast W", sockets: [0,0,0,1], weight: 0.7, elev: 0.38 },
+        { id: 5, name: "Highland", sockets: [1,1,1,1], weight: p.roadBias, elev: 0.85 },
+        { id: 6, name: "Ridge V", sockets: [1,0,1,0], weight: 0.6, elev: 0.65 },
+        { id: 7, name: "Ridge H", sockets: [0,1,0,1], weight: 0.6, elev: 0.65 }
+      ];
+
+      // Run WFC with restart fallback on contradiction
+      let solvedGrid = null;
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const wave = Array.from({ length: G * G }, () => TILES.map(t => t.id));
+        let failed = false;
+
+        while (true) {
+          // Find lowest entropy uncollapsed cell
+          let minEnt = Infinity;
+          let targetIdx = -1;
+          for (let i = 0; i < G * G; i++) {
+            const opts = wave[i];
+            if (opts.length === 0) { failed = true; break; }
+            if (opts.length > 1) {
+              const ent = opts.length + rng() * 0.05;
+              if (ent < minEnt) { minEnt = ent; targetIdx = i; }
+            }
+          }
+          if (failed || targetIdx === -1) break;
+
+          // Weighted collapse
+          const opts = wave[targetIdx];
+          let totalW = 0;
+          for (const id of opts) totalW += TILES[id].weight;
+          let r = rng() * totalW;
+          let chosen = opts[0];
+          for (const id of opts) {
+            r -= TILES[id].weight;
+            if (r <= 0) { chosen = id; break; }
+          }
+          wave[targetIdx] = [chosen];
+
+          // Propagate constraints
+          const queue = [targetIdx];
+          while (queue.length > 0 && !failed) {
+            const curr = queue.shift();
+            const cx = curr % G;
+            const cy = Math.floor(curr / G);
+            const dirs = [
+              { dx: 0, dy: -1, mySock: 0, oppSock: 2 },
+              { dx: 1, dy: 0, mySock: 1, oppSock: 3 },
+              { dx: 0, dy: 1, mySock: 2, oppSock: 0 },
+              { dx: -1, dy: 0, mySock: 3, oppSock: 1 }
+            ];
+            for (const d of dirs) {
+              const nx = cx + d.dx;
+              const ny = cy + d.dy;
+              if (nx < 0 || ny < 0 || nx >= G || ny >= G) continue;
+              const nIdx = ny * G + nx;
+              const validSockets = new Set();
+              for (const id of wave[curr]) validSockets.add(TILES[id].sockets[d.mySock]);
+
+              const beforeLen = wave[nIdx].length;
+              wave[nIdx] = wave[nIdx].filter(nid => validSockets.has(TILES[nid].sockets[d.oppSock]));
+              if (wave[nIdx].length === 0) { failed = true; break; }
+              if (wave[nIdx].length < beforeLen) queue.push(nIdx);
+            }
+          }
+          if (failed) break;
+        }
+
+        if (!failed) {
+          solvedGrid = wave.map(w => TILES[w[0]]);
+          break;
+        }
+      }
+      if (!solvedGrid) {
+        solvedGrid = Array.from({ length: G * G }, (_, i) => TILES[i % TILES.length]);
+      }
+      meta.wfcGrid = solvedGrid;
+      meta.wfcSize = G;
+      meta.ruleset = p.ruleset;
+
+      // Map tile elevation onto high-res scalar field for 3D relief & hover
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const gx = Math.min(G - 1, Math.floor((x / N) * G));
+          const gy = Math.min(G - 1, Math.floor((y / N) * G));
+          const tile = solvedGrid[gy * G + gx];
+          const lx = ((x / N) * G) - gx - 0.5;
+          const ly = ((y / N) * G) - gy - 0.5;
+          let e = tile.elev;
+          // Carve crisp socket channels in elevation
+          const inRoad =
+            (tile.sockets[0] && ly < 0.14 && Math.abs(lx) < 0.16) ||
+            (tile.sockets[2] && ly > -0.14 && Math.abs(lx) < 0.16) ||
+            (tile.sockets[1] && lx > -0.14 && Math.abs(ly) < 0.16) ||
+            (tile.sockets[3] && lx < 0.14 && Math.abs(ly) < 0.16);
+          if (inRoad) e = Math.min(1.0, e + 0.28);
+          field[y * N + x] = e;
+        }
+      }
+    }
+    else if (sysId === "gaussian") {
+      // Latent space tensor (e.g., 42x42 latent grid upsampled smoothly to N)
+      const L = 42;
+      const gRng = makeGaussianRng(p.seed);
+      const ch0 = new Float32Array(L * L);
+      const ch1 = new Float32Array(L * L);
+      for (let i = 0; i < L * L; i++) {
+        ch0[i] = p.mean + gRng() * p.sigma;
+        ch1[i] = p.mean + gRng() * p.sigma;
+      }
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const lx = Math.min(L - 1, Math.floor((x / N) * L));
+          const ly = Math.min(L - 1, Math.floor((y / N) * L));
+          const idx = ly * L + lx;
+          let zVal = ch0[idx];
+          if (p.channel === "1") zVal = ch1[idx];
+          else if (p.channel === "mix") zVal = (Math.hypot(ch0[idx], ch1[idx]) - 1.0);
+          field[y * N + x] = clamp01(0.5 + zVal * 0.24);
+        }
+      }
+    }
+    else if (sysId === "slerp") {
+      // Generate two smooth hyperspherical latent manifolds A and B
+      const perlinA = makePerlinNoise2D(p.seedA);
+      const perlinB = makePerlinNoise2D(p.seedB);
+      const gaussA = makeGaussianRng(p.seedA);
+      const gaussB = makeGaussianRng(p.seedB);
+
+      const vecA = new Float32Array(N * N);
+      const vecB = new Float32Array(N * N);
+      let normA = 0, normB = 0, dot = 0;
+
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const i = y * N + x;
+          const nx = (x / N) * p.smoothness;
+          const ny = (y / N) * p.smoothness;
+          const a = (perlinA(nx, ny) - 0.5) * 2.4 + gaussA() * 0.25;
+          const b = (perlinB(nx, ny) - 0.5) * 2.4 + gaussB() * 0.25;
+          vecA[i] = a;
+          vecB[i] = b;
+          normA += a * a;
+          normB += b * b;
+        }
+      }
+      normA = Math.sqrt(normA) || 1;
+      normB = Math.sqrt(normB) || 1;
+      for (let i = 0; i < N * N; i++) {
+        vecA[i] /= normA;
+        vecB[i] /= normB;
+        dot += vecA[i] * vecB[i];
+      }
+      dot = Math.max(-0.999, Math.min(0.999, dot));
+      const omega = Math.acos(dot);
+      const sinOmega = Math.sin(omega) || 1e-5;
+      const t = p.t;
+      const wA = Math.sin((1 - t) * omega) / sinOmega;
+      const wB = Math.sin(t * omega) / sinOmega;
+      const scaleFactor = Math.sqrt(N * N) * 0.35;
+
+      for (let i = 0; i < N * N; i++) {
+        const z = (wA * vecA[i] + wB * vecB[i]) * scaleFactor;
+        field[i] = clamp01(0.5 + z);
+      }
+    }
+    else if (sysId === "perlinflow") {
+      const perlin = makePerlinNoise2D(p.seed);
+      const warpFn = makeSimplexNoise2D(p.seed + 77);
+      const gRng = makeGaussianRng(p.seed + 999);
+      const alpha = p.alpha;
+      const beta = Math.sqrt(Math.max(0, 1 - alpha * alpha));
+
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const u = (x / N) * p.flowFreq;
+          const v = (y / N) * p.flowFreq;
+          const wx = (warpFn(u, v) - 0.5) * p.warp * 2.0;
+          const wy = (warpFn(u + 5.2, v + 1.3) - 0.5) * p.warp * 2.0;
+          const pVal = (perlin(u + wx, v + wy) - 0.5) * 2.4;
+          const gVal = gRng() * 0.85;
+          const zHybrid = alpha * pVal + beta * gVal;
+          field[y * N + x] = clamp01(0.5 + zHybrid * 0.32);
+        }
+      }
+    }
+    else if (sysId === "truncated") {
+      const L = Math.floor(N / p.coherence);
+      const gRng = makeGaussianRng(p.seed);
+      const psi = p.psi;
+      const coarse = new Float32Array(L * L);
+
+      for (let i = 0; i < L * L; i++) {
+        let z = gRng();
+        if (p.mode === "resample") {
+          let guard = 0;
+          while (Math.abs(z) > psi && guard < 40) {
+            z = gRng();
+            guard++;
+          }
+          z = Math.max(-psi, Math.min(psi, z));
+        } else {
+          z = Math.max(-psi, Math.min(psi, z));
+        }
+        coarse[i] = z;
+      }
+
+      // Bilinear interpolation across latent cells
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const gx = (x / N) * (L - 1);
+          const gy = (y / N) * (L - 1);
+          const ix = Math.floor(gx);
+          const iy = Math.floor(gy);
+          const fx = fade(gx - ix);
+          const fy = fade(gy - iy);
+          const ix1 = Math.min(L - 1, ix + 1);
+          const iy1 = Math.min(L - 1, iy + 1);
+          const v00 = coarse[iy * L + ix];
+          const v10 = coarse[iy * L + ix1];
+          const v01 = coarse[iy1 * L + ix];
+          const v11 = coarse[iy1 * L + ix1];
+          const z = lerp(lerp(v00, v10, fx), lerp(v01, v11, fx), fy);
+          field[y * N + x] = clamp01(0.5 + z * 0.25);
+        }
+      }
+    }
+    else if (sysId === "curl") {
+      meta.type = "curl";
+      const pot = makeSimplexNoise2D(p.seed);
+      const eps = 0.015;
+      const vxField = new Float32Array(N * N);
+      const vyField = new Float32Array(N * N);
+
+      function curlAt(nx, ny) {
+        const sx = nx * p.scale;
+        const sy = ny * p.scale;
+        const dPsiDy = (pot(sx, sy + eps) - pot(sx, sy - eps)) / (2 * eps);
+        const dPsiDx = (pot(sx + eps, sy) - pot(sx - eps, sy)) / (2 * eps);
+        return { vx: dPsiDy, vy: -dPsiDx, psi: pot(sx, sy) };
+      }
+
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const c = curlAt(x / N, y / N);
+          vxField[y * N + x] = c.vx;
+          vyField[y * N + x] = c.vy;
+          const speed = Math.hypot(c.vx, c.vy);
+          field[y * N + x] = clamp01(speed * 0.42);
+        }
+      }
+
+      // Advect divergence-free streamlines
+      const rng = mulberry32(p.seed + 55);
+      const streamlines = [];
+      for (let i = 0; i < p.particles; i++) {
+        let px = rng();
+        let py = rng();
+        const pts = [{ x: px, y: py, speed: 0 }];
+        const dt = 0.008;
+        for (let s = 0; s < p.vorticity; s++) {
+          const c = curlAt(px, py);
+          const mag = Math.hypot(c.vx, c.vy) || 1e-4;
+          px += (c.vx / mag) * dt;
+          py += (c.vy / mag) * dt;
+          if (px < 0 || px > 1 || py < 0 || py > 1) break;
+          pts.push({ x: px, y: py, speed: clamp01(mag * 0.42) });
+        }
+        streamlines.push(pts);
+      }
+      meta.streamlines = streamlines;
+    }
+    else if (sysId === "blue") {
+      meta.type = "blue";
+      // Bridson's Poisson-Disk Sampling for true Blue Noise
+      const rng = mulberry32(p.seed);
+      const r = p.minDist;
+      const k = p.attempts;
+      const cellSize = r / Math.SQRT2;
+      const gridW = Math.ceil(1 / cellSize);
+      const gridH = Math.ceil(1 / cellSize);
+      const accel = new Int32Array(gridW * gridH).fill(-1);
+      const points = [];
+      const active = [];
+
+      function addPoint(pt) {
+        const idx = points.length;
+        points.push(pt);
+        active.push(idx);
+        const gx = Math.floor(pt.x / cellSize);
+        const gy = Math.floor(pt.y / cellSize);
+        accel[gy * gridW + gx] = idx;
+      }
+
+      addPoint({ x: rng(), y: rng() });
+
+      while (active.length > 0 && points.length < 1800) {
+        const randIdx = Math.floor(rng() * active.length);
+        const basePt = points[active[randIdx]];
+        let found = false;
+
+        for (let attempt = 0; attempt < k; attempt++) {
+          const angle = rng() * Math.PI * 2;
+          const dist = r * (1 + rng());
+          const nx = basePt.x + Math.cos(angle) * dist;
+          const ny = basePt.y + Math.sin(angle) * dist;
+          if (nx < 0 || nx >= 1 || ny < 0 || ny >= 1) continue;
+
+          const gx = Math.floor(nx / cellSize);
+          const gy = Math.floor(ny / cellSize);
+          let ok = true;
+
+          for (let oy = -2; oy <= 2 && ok; oy++) {
+            for (let ox = -2; ox <= 2 && ok; ox++) {
+              const cx = gx + ox;
+              const cy = gy + oy;
+              if (cx < 0 || cy < 0 || cx >= gridW || cy >= gridH) continue;
+              const pIdx = accel[cy * gridW + cx];
+              if (pIdx !== -1) {
+                const other = points[pIdx];
+                if (Math.hypot(nx - other.x, ny - other.y) < r) {
+                  ok = false;
+                }
+              }
+            }
+          }
+          if (ok) {
+            addPoint({ x: nx, y: ny });
+            found = true;
+            break;
+          }
+        }
+        if (!found) active.splice(randIdx, 1);
+      }
+
+      meta.bluePoints = points;
+      meta.minDist = r;
+
+      // Render smooth radial Gaussian splats into the scalar field for 3D relief
+      const sigma = r * p.falloff * 0.75;
+      const invTwoSigSq = 1.0 / (2 * sigma * sigma);
+      for (const pt of points) {
+        const minX = Math.max(0, Math.floor((pt.x - sigma * 2.5) * N));
+        const maxX = Math.min(N - 1, Math.ceil((pt.x + sigma * 2.5) * N));
+        const minY = Math.max(0, Math.floor((pt.y - sigma * 2.5) * N));
+        const maxY = Math.min(N - 1, Math.ceil((pt.y + sigma * 2.5) * N));
+        for (let y = minY; y <= maxY; y++) {
+          for (let x = minX; x <= maxX; x++) {
+            const dx = (x / N) - pt.x;
+            const dy = (y / N) - pt.y;
+            const d2 = dx * dx + dy * dy;
+            const val = Math.exp(-d2 * invTwoSigSq);
+            field[y * N + x] = Math.max(field[y * N + x], val);
+          }
+        }
+      }
+    }
+
+    return { field, meta };
+  }
+
+  /* ============================================================================
+   * 4. COLOR PALETTES & TOPOLOGICAL RENDERER (2D TOP-DOWN + 3D ISOMETRIC RELIEF)
+   * ========================================================================== */
+  function getPaletteColor(t, palette, shade = 1.0) {
+    t = clamp01(t);
+    let r = 0, g = 0, b = 0;
+
+    if (palette === "uab") {
+      // Official UAB Dark Green (#0A291F -> #1E6B52) transitioning into UAB Gold (#F4C300 -> #FFF1A8)
+      if (t < 0.35) {
+        const k = t / 0.35;
+        r = lerp(8, 22, k);
+        g = lerp(34, 82, k);
+        b = lerp(26, 62, k);
+      } else if (t < 0.65) {
+        const k = (t - 0.35) / 0.30;
+        r = lerp(22, 46, k);
+        g = lerp(82, 134, k);
+        b = lerp(62, 92, k);
+      } else if (t < 0.88) {
+        const k = (t - 0.65) / 0.23;
+        r = lerp(46, 244, k);
+        g = lerp(134, 195, k);
+        b = lerp(92, 0, k);
+      } else {
+        const k = (t - 0.88) / 0.12;
+        r = lerp(244, 255, k);
+        g = lerp(195, 236, k);
+        b = lerp(0, 145, k);
+      }
+    } else if (palette === "terrain") {
+      if (t < 0.28) {
+        const k = t / 0.28;
+        r = lerp(12, 28, k);
+        g = lerp(42, 112, k);
+        b = lerp(96, 178, k);
+      } else if (t < 0.36) {
+        const k = (t - 0.28) / 0.08;
+        r = lerp(45, 210, k);
+        g = lerp(155, 195, k);
+        b = lerp(185, 130, k);
+      } else if (t < 0.68) {
+        const k = (t - 0.36) / 0.32;
+        r = lerp(52, 118, k);
+        g = lerp(142, 115, k);
+        b = lerp(74, 78, k);
+      } else if (t < 0.86) {
+        const k = (t - 0.68) / 0.18;
+        r = lerp(118, 175, k);
+        g = lerp(115, 178, k);
+        b = lerp(78, 185, k);
+      } else {
+        const k = (t - 0.86) / 0.14;
+        r = lerp(180, 248, k);
+        g = lerp(185, 250, k);
+        b = lerp(195, 255, k);
+      }
+    } else if (palette === "viridis") {
+      // Perceptually uniform thermal/viridis curve
+      r = clamp01(0.267 + t * (0.004 + t * (3.29 - t * 2.58))) * 255;
+      g = clamp01(0.005 + t * (1.38 - t * 0.48)) * 255;
+      b = clamp01(0.329 + t * (1.44 - t * (2.65 - t * 1.05))) * 255;
+    } else {
+      // Grayscale
+      const v = t * 245 + 10;
+      r = v; g = v; b = v;
+    }
+
+    r = Math.min(255, Math.max(0, Math.round(r * shade)));
+    g = Math.min(255, Math.max(0, Math.round(g * shade)));
+    b = Math.min(255, Math.max(0, Math.round(b * shade)));
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function renderVisualization(canvas, data, viewMode, palette, sysId) {
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const width = Math.max(300, Math.floor(rect.width));
+    const height = Math.max(260, Math.floor(rect.height));
+
+    if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+    }
+
+    ctx.save();
+    ctx.scale(dpr, dpr);
+
+    // Clear background in deep UAB Forest Green
+    ctx.fillStyle = "#061A13";
+    ctx.fillRect(0, 0, width, height);
+
+    const { field, meta } = data;
+    const N = meta.N;
+
+    if (viewMode === "2d") {
+      renderTopDown2D(ctx, width, height, field, meta, palette, sysId);
+    } else {
+      renderIsometric3D(ctx, width, height, field, meta, palette, sysId);
+    }
+
+    ctx.restore();
+  }
+
+  function renderTopDown2D(ctx, width, height, field, meta, palette, sysId) {
+    const pad = 20;
+    const size = Math.min(width - pad * 2, height - pad * 2);
+    const ox = (width - size) * 0.5;
+    const oy = (height - size) * 0.5;
+    const N = meta.N;
+
+    // Store projected bounds for mouse telemetry
+    state.renderBounds = { mode: "2d", ox, oy, size };
+
+    // Special vector/botanical rendering for L-Systems
+    if (meta.type === "lsystem") {
+      // Subtle coordinate grid
+      ctx.strokeStyle = "rgba(244, 195, 0, 0.10)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 8; i++) {
+        const p = (i / 8) * size;
+        ctx.beginPath(); ctx.moveTo(ox + p, oy); ctx.lineTo(ox + p, oy + size); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(ox, oy + p); ctx.lineTo(ox + size, oy + p); ctx.stroke();
+      }
+
+      const centerX = ox + size * 0.5;
+      const centerY = oy + size * 0.5;
+      const scale = size * 0.88;
+
+      for (const s of meta.segments) {
+        ctx.beginPath();
+        ctx.moveTo(centerX + s.nx1 * scale, centerY + s.ny1 * scale);
+        ctx.lineTo(centerX + s.nx2 * scale, centerY + s.ny2 * scale);
+        ctx.strokeStyle = getPaletteColor(0.25 + s.normDepth * 0.75, palette);
+        ctx.lineWidth = Math.max(0.9, (1 - s.normDepth) * 3.2);
+        ctx.lineCap = "round";
+        ctx.stroke();
+      }
+      ctx.strokeStyle = "#24634D";
+      ctx.strokeRect(ox, oy, size, size);
+      return;
+    }
+
+    // Special crisp tile rendering for Wave Function Collapse
+    if (meta.type === "wfc") {
+      const G = meta.wfcSize;
+      const cell = size / G;
+      for (let gy = 0; gy < G; gy++) {
+        for (let gx = 0; gx < G; gx++) {
+          const tile = meta.wfcGrid[gy * G + gx];
+          const px = ox + gx * cell;
+          const py = oy + gy * cell;
+          ctx.fillStyle = getPaletteColor(tile.elev * 0.75, palette);
+          ctx.fillRect(px, py, cell + 0.5, cell + 0.5);
+
+          // Draw connected sockets
+          const cx = px + cell * 0.5;
+          const cy = py + cell * 0.5;
+          ctx.strokeStyle = getPaletteColor(Math.min(1, tile.elev + 0.35), palette, 1.25);
+          ctx.lineWidth = Math.max(2, cell * 0.24);
+          ctx.lineCap = "round";
+
+          const hasAny = tile.sockets.some(s => s === 1);
+          if (hasAny) {
+            ctx.beginPath();
+            if (tile.sockets[0]) { ctx.moveTo(cx, cy); ctx.lineTo(cx, py); }
+            if (tile.sockets[1]) { ctx.moveTo(cx, cy); ctx.lineTo(px + cell, cy); }
+            if (tile.sockets[2]) { ctx.moveTo(cx, cy); ctx.lineTo(cx, py + cell); }
+            if (tile.sockets[3]) { ctx.moveTo(cx, cy); ctx.lineTo(px, cy); }
+            ctx.stroke();
+          }
+
+          ctx.strokeStyle = "rgba(8, 11, 17, 0.35)";
+          ctx.lineWidth = 0.75;
+          ctx.strokeRect(px, py, cell, cell);
+        }
+      }
+      return;
+    }
+
+    // Standard high-res scalar pixel rendering
+    const cellW = size / N;
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        const v = field[y * N + x];
+        ctx.fillStyle = getPaletteColor(v, palette);
+        ctx.fillRect(ox + x * cellW, oy + y * cellW, cellW + 0.6, cellW + 0.6);
+      }
+    }
+
+    // Topographic contour isolines for continuous scalar fields
+    if (["value", "perlin", "simplex", "slerp", "perlinflow", "truncated"].includes(sysId)) {
+      ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
+      const levels = [0.25, 0.4, 0.55, 0.7, 0.85];
+      for (let y = 0; y < N - 1; y++) {
+        for (let x = 0; x < N - 1; x++) {
+          const v = field[y * N + x];
+          const vr = field[y * N + (x + 1)];
+          const vd = field[(y + 1) * N + x];
+          for (const lvl of levels) {
+            if ((v < lvl && vr >= lvl) || (v >= lvl && vr < lvl) || (v < lvl && vd >= lvl) || (v >= lvl && vd < lvl)) {
+              ctx.fillRect(ox + x * cellW, oy + y * cellW, Math.max(1.1, cellW * 0.45), Math.max(1.1, cellW * 0.45));
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    // Overlays for Voronoi feature points
+    if (sysId === "voronoi" && meta.points) {
+      ctx.fillStyle = "#ffffff";
+      for (const pt of meta.points) {
+        ctx.beginPath();
+        ctx.arc(ox + pt.x * size, oy + pt.y * size, 2.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Overlays for Curl Noise divergence-free streamlines
+    if (sysId === "curl" && meta.streamlines) {
+      for (const line of meta.streamlines) {
+        if (line.length < 2) continue;
+        ctx.beginPath();
+        ctx.moveTo(ox + line[0].x * size, oy + line[0].y * size);
+        for (let i = 1; i < line.length; i++) {
+          ctx.lineTo(ox + line[i].x * size, oy + line[i].y * size);
+        }
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.65)";
+        ctx.lineWidth = 1.25;
+        ctx.stroke();
+
+        const tip = line[line.length - 1];
+        ctx.fillStyle = "#F4C300";
+        ctx.beginPath();
+        ctx.arc(ox + tip.x * size, oy + tip.y * size, 1.9, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Overlays for Blue Noise Poisson-disk sample points
+    if (sysId === "blue" && meta.bluePoints) {
+      ctx.fillStyle = "#F7F9F8";
+      for (const pt of meta.bluePoints) {
+        ctx.beginPath();
+        ctx.arc(ox + pt.x * size, oy + pt.y * size, 2.1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Crisp outer frame
+    ctx.strokeStyle = "#24634D";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(ox, oy, size, size);
+  }
+
+  function renderIsometric3D(ctx, width, height, field, meta, palette, sysId) {
+    const N = meta.N;
+    state.renderBounds = { mode: "3d", width, height };
+
+    // Special 3D Isometric Botanical Tree for L-Systems
+    if (meta.type === "lsystem") {
+      const cx = width * 0.5;
+      const baseY = height * 0.84;
+      const span = Math.min(width * 0.42, height * 0.46);
+      const elevScale = Math.min(width * 0.62, height * 0.66);
+
+      // Draw isometric ground plane grid
+      ctx.strokeStyle = "rgba(244, 195, 0, 0.16)";
+      ctx.lineWidth = 1;
+      for (let i = -4; i <= 4; i++) {
+        const u = i / 4;
+        const p1 = isoProj(u, -1, 0, cx, baseY, span, 0);
+        const p2 = isoProj(u, 1, 0, cx, baseY, span, 0);
+        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+
+        const p3 = isoProj(-1, u, 0, cx, baseY, span, 0);
+        const p4 = isoProj(1, u, 0, cx, baseY, span, 0);
+        ctx.beginPath(); ctx.moveTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y); ctx.stroke();
+      }
+
+      for (const s of meta.segments) {
+        const p1 = isoProj(s.nx1 * 1.5, s.nz1 * 1.5, s.h1, cx, baseY, span, elevScale);
+        const p2 = isoProj(s.nx2 * 1.5, s.nz2 * 1.5, s.h2, cx, baseY, span, elevScale);
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.strokeStyle = getPaletteColor(0.25 + s.normDepth * 0.75, palette);
+        ctx.lineWidth = Math.max(1.0, (1 - s.normDepth) * 3.6);
+        ctx.lineCap = "round";
+        ctx.stroke();
+      }
+      return;
+    }
+
+    // Isometric 3D Relief Surface Mesh (Strict Back-to-Front Painter's Algorithm)
+    // In isoProj: isoY increases with (nx + ny), meaning (0,0) is the farthest back vertex
+    // and (N-1, N-1) is the closest front vertex toward the viewer.
+    const cx = width * 0.5;
+    const cy = height * 0.56;
+    const span = Math.min(width * 0.44, height * 0.52);
+    const elevScale = Math.min(width, height) * 0.23;
+
+    // Pedestal base corners (at h = 0)
+    const b00 = isoProj(-1, -1, 0, cx, cy, span, elevScale); // Far back corner
+    const b10 = isoProj(1, -1, 0, cx, cy, span, elevScale);  // Right corner
+    const b11 = isoProj(1, 1, 0, cx, cy, span, elevScale);   // Front-most corner
+    const b01 = isoProj(-1, 1, 0, cx, cy, span, elevScale);  // Left corner
+
+    // Render top surface quads strictly back-to-front along diagonal depth slices (d = ix + iy)
+    const numCells = N - 1;
+    const maxDiag = (numCells - 1) * 2;
+    for (let d = 0; d <= maxDiag; d++) {
+      const xStart = Math.max(0, d - (numCells - 1));
+      const xEnd = Math.min(numCells - 1, d);
+      for (let x = xStart; x <= xEnd; x++) {
+        const y = d - x;
+        const nx0 = (x / (N - 1)) * 2 - 1;
+        const nx1 = ((x + 1) / (N - 1)) * 2 - 1;
+        const ny0 = (y / (N - 1)) * 2 - 1;
+        const ny1 = ((y + 1) / (N - 1)) * 2 - 1;
+
+        const h00 = field[y * N + x];
+        const h10 = field[y * N + (x + 1)];
+        const h11 = field[(y + 1) * N + (x + 1)];
+        const h01 = field[(y + 1) * N + x];
+
+        const p00 = isoProj(nx0, ny0, h00, cx, cy, span, elevScale);
+        const p10 = isoProj(nx1, ny0, h10, cx, cy, span, elevScale);
+        const p11 = isoProj(nx1, ny1, h11, cx, cy, span, elevScale);
+        const p01 = isoProj(nx0, ny1, h01, cx, cy, span, elevScale);
+
+        const avgH = (h00 + h10 + h11 + h01) * 0.25;
+        // Directional sunlight shading from upper-left
+        const slopeX = (h00 + h01) - (h10 + h11);
+        const slopeY = (h00 + h10) - (h01 + h11);
+        const shade = Math.max(0.55, Math.min(1.38, 1.0 + slopeX * 1.45 + slopeY * 0.85));
+        const fillCol = getPaletteColor(avgH, palette, shade);
+
+        ctx.fillStyle = fillCol;
+        ctx.beginPath();
+        ctx.moveTo(p00.x, p00.y);
+        ctx.lineTo(p10.x, p10.y);
+        ctx.lineTo(p11.x, p11.y);
+        ctx.lineTo(p01.x, p01.y);
+        ctx.closePath();
+        ctx.fill();
+
+        // Matching micro-stroke eliminates sub-pixel cracks without creating far-edge bleed
+        ctx.strokeStyle = fillCol;
+        ctx.lineWidth = 0.45;
+        ctx.stroke();
+
+        // Subtle topographic grid line every 4th cell
+        if (x % 4 === 0 || y % 4 === 0) {
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.06)";
+          ctx.lineWidth = 0.45;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Draw ONLY the two front-facing cutaway pedestal skirts (iy === N - 1 and ix === N - 1)
+    // Back-facing walls (ix === 0 and iy === 0) are culled so they never bleed over the far horizon.
+
+    // 1. Front-Left Skirt (along iy = N - 1, from left corner b01 to front corner b11)
+    ctx.fillStyle = "#0E3427";
+    ctx.beginPath();
+    ctx.moveTo(b01.x, b01.y);
+    for (let x = 0; x < N; x++) {
+      const nx = (x / (N - 1)) * 2 - 1;
+      const pt = isoProj(nx, 1, field[(N - 1) * N + x], cx, cy, span, elevScale);
+      ctx.lineTo(pt.x, pt.y);
+    }
+    ctx.lineTo(b11.x, b11.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "rgba(244, 195, 0, 0.42)";
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+
+    // 2. Front-Right Skirt (along ix = N - 1, from front corner b11 to right corner b10)
+    ctx.fillStyle = "#09231B";
+    ctx.beginPath();
+    ctx.moveTo(b11.x, b11.y);
+    for (let y = N - 1; y >= 0; y--) {
+      const ny = (y / (N - 1)) * 2 - 1;
+      const pt = isoProj(1, ny, field[y * N + (N - 1)], cx, cy, span, elevScale);
+      ctx.lineTo(pt.x, pt.y);
+    }
+    ctx.lineTo(b10.x, b10.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "rgba(244, 195, 0, 0.42)";
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+
+    // If Curl Noise, also project 3D streamlines floating over the relief!
+    if (sysId === "curl" && meta.streamlines) {
+      for (const line of meta.streamlines) {
+        if (line.length < 2) continue;
+        ctx.beginPath();
+        for (let i = 0; i < line.length; i++) {
+          const pt = line[i];
+          const gx = Math.min(N - 1, Math.floor(pt.x * N));
+          const gy = Math.min(N - 1, Math.floor(pt.y * N));
+          const h = field[gy * N + gx] + 0.04;
+          const proj = isoProj(pt.x * 2 - 1, pt.y * 2 - 1, h, cx, cy, span, elevScale);
+          if (i === 0) ctx.moveTo(proj.x, proj.y);
+          else ctx.lineTo(proj.x, proj.y);
+        }
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.72)";
+        ctx.lineWidth = 1.25;
+        ctx.stroke();
+      }
+    }
+  }
+
+  function isoProj(nx, ny, h, cx, cy, span, elevScale) {
+    // Classic 30-degree isometric projection
+    const isoX = (nx - ny) * 0.866025 * span;
+    const isoY = (nx + ny) * 0.5 * span * 0.72 - h * elevScale;
+    return { x: cx + isoX, y: cy + isoY };
+  }
+
+  /* ============================================================================
+   * 5. APPLICATION STATE & UI CONTROLLER
+   * ========================================================================== */
+  const state = {
+    activeId: "perlin",
+    viewMode: "2d",
+    palette: "uab",
+    paramValues: {},
+    currentData: null,
+    renderBounds: null
+  };
+
+  // Initialize default parameter values for all systems
+  for (const sys of SYSTEMS) {
+    state.paramValues[sys.id] = {};
+    for (const prm of sys.params) {
+      state.paramValues[sys.id][prm.id] = prm.default;
+    }
+  }
+
+  const sidebarNav = document.getElementById("sidebarNav");
+  const infoPanel = document.getElementById("infoPanel");
+  const paramsContainer = document.getElementById("paramsContainer");
+  const paramsHeaderTitle = document.getElementById("paramsHeaderTitle");
+  const gridResBadge = document.getElementById("gridResBadge");
+  const generateBtn = document.getElementById("generateBtn");
+  const randomSeedBtn = document.getElementById("randomSeedBtn");
+  const btnView2D = document.getElementById("btnView2D");
+  const btnView3D = document.getElementById("btnView3D");
+  const paletteSelect = document.getElementById("paletteSelect");
+  const noiseCanvas = document.getElementById("noiseCanvas");
+  const hoverCoord = document.getElementById("hoverCoord");
+  const hoverValue = document.getElementById("hoverValue");
+  const genTimeVal = document.getElementById("genTimeVal");
+
+  function renderSidebar() {
+    sidebarNav.innerHTML = "";
+    let currentCat = "";
+    for (const sys of SYSTEMS) {
+      if (sys.category !== currentCat) {
+        currentCat = sys.category;
+        const catDiv = document.createElement("div");
+        catDiv.className = "nav-category";
+        catDiv.textContent = currentCat;
+        sidebarNav.appendChild(catDiv);
+      }
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "nav-item" + (sys.id === state.activeId ? " active" : "");
+      btn.innerHTML = `
+        <span><span class="nav-index">${sys.index}</span>${sys.name}</span>
+        <span class="nav-tag">${sys.tag}</span>
+      `;
+      btn.addEventListener("click", () => selectSystem(sys.id));
+      sidebarNav.appendChild(btn);
+    }
+  }
+
+  function renderDocumentation(sys) {
+    const pillClass = sys.catType === "classic" ? "pill-classic" : "pill-latent";
+    const stepsHtml = sys.howItWorks.map(step => `<li>${step}</li>`).join("");
+    const currentVals = state.paramValues[sys.id];
+
+    const paramRefHtml = sys.params.map(prm => {
+      const liveVal = currentVals[prm.id];
+      let displayVal = liveVal;
+      let boundsText = "";
+      if (prm.type === "range") {
+        boundsText = `Range: ${prm.min} – ${prm.max}`;
+      } else if (prm.type === "select") {
+        const matched = prm.options.find(o => o.value === liveVal);
+        displayVal = matched ? matched.label : liveVal;
+        boundsText = `${prm.options.length} Modes`;
+      }
+      return `
+        <div class="param-ref-item">
+          <div class="param-ref-header">
+            <span class="param-ref-title">${prm.label}</span>
+            <div class="param-ref-badges">
+              <span class="param-ref-live" id="doc_param_val_${prm.id}">Active: ${displayVal}</span>
+              <span class="param-ref-bounds">${boundsText}</span>
+            </div>
+          </div>
+          <div class="param-ref-desc">${prm.desc}</div>
+        </div>
+      `;
+    }).join("");
+
+    infoPanel.innerHTML = `
+      <div class="doc-header">
+        <span class="category-pill ${pillClass}">${sys.category}</span>
+        <h1 class="doc-title">${sys.name}</h1>
+      </div>
+
+      <div class="doc-section">
+        <div class="doc-section-title">General Usage</div>
+        <div class="doc-card">${sys.usage}</div>
+      </div>
+
+      <div class="doc-section">
+        <div class="doc-section-title">What It Is</div>
+        <div class="doc-card">${sys.whatItIs}</div>
+      </div>
+
+      <div class="doc-section">
+        <div class="doc-section-title">How It Works</div>
+        <div class="doc-card">
+          <ol class="steps-list">${stepsHtml}</ol>
+        </div>
+      </div>
+
+      <div class="doc-section">
+        <div class="doc-section-title">Mathematical &amp; Algorithmic Profile</div>
+        <div class="math-card">
+          <div class="math-row"><span class="math-label">Math Basis:</span><span class="math-val">${sys.math.basis}</span></div>
+          <div class="math-row"><span class="math-label">Core Equation:</span><span class="math-val" style="color: var(--uab-gold-bright);">${sys.math.formula}</span></div>
+          <div class="math-row"><span class="math-label">Topological Output:</span><span class="math-val">${sys.math.output}</span></div>
+          <div class="math-row"><span class="math-label">Complexity / Property:</span><span class="math-val">${sys.math.complexity}</span></div>
+        </div>
+      </div>
+
+      <div class="doc-section">
+        <div class="doc-section-title">Active Parameters &amp; Controls Reference</div>
+        <div class="param-ref-list">${paramRefHtml}</div>
+      </div>
+    `;
+  }
+
+  function renderParameters(sys) {
+    paramsHeaderTitle.textContent = `${sys.name} Parameters`;
+    gridResBadge.textContent = sys.id === "wfc"
+      ? `WFC GRID: ${state.paramValues[sys.id].gridSize}×${state.paramValues[sys.id].gridSize}`
+      : `FIELD RES: ${FIELD_RES}×${FIELD_RES}`;
+
+    paramsContainer.innerHTML = "";
+    const vals = state.paramValues[sys.id];
+
+    for (const prm of sys.params) {
+      const wrap = document.createElement("div");
+      wrap.className = "param-control";
+
+      if (prm.type === "range") {
+        const currentVal = vals[prm.id];
+        wrap.innerHTML = `
+          <div class="param-label-row">
+            <label class="param-name" for="ctrl_${prm.id}">${prm.label}</label>
+            <span class="param-value" id="val_${prm.id}">${currentVal}</span>
+          </div>
+          <input type="range" id="ctrl_${prm.id}" min="${prm.min}" max="${prm.max}" step="${prm.step}" value="${currentVal}">
+        `;
+        const input = wrap.querySelector("input");
+        const valBadge = wrap.querySelector(".param-value");
+        input.addEventListener("input", () => {
+          const parsed = parseFloat(input.value);
+          vals[prm.id] = parsed;
+          valBadge.textContent = parsed;
+          const docBadge = document.getElementById(`doc_param_val_${prm.id}`);
+          if (docBadge) docBadge.textContent = `Active: ${parsed}`;
+          if (sys.id === "wfc" && prm.id === "gridSize") {
+            gridResBadge.textContent = `WFC GRID: ${parsed}×${parsed}`;
+          }
+          runGeneration(false);
+        });
+      } else if (prm.type === "select") {
+        const currentVal = vals[prm.id];
+        const optsHtml = prm.options.map(o =>
+          `<option value="${o.value}" ${o.value === currentVal ? "selected" : ""}>${o.label}</option>`
+        ).join("");
+        wrap.innerHTML = `
+          <div class="param-label-row">
+            <label class="param-name" for="ctrl_${prm.id}">${prm.label}</label>
+          </div>
+          <select id="ctrl_${prm.id}" class="param-select">${optsHtml}</select>
+        `;
+        const sel = wrap.querySelector("select");
+        sel.addEventListener("change", () => {
+          vals[prm.id] = sel.value;
+          const docBadge = document.getElementById(`doc_param_val_${prm.id}`);
+          if (docBadge) {
+            const matched = prm.options.find(o => o.value === sel.value);
+            docBadge.textContent = `Active: ${matched ? matched.label : sel.value}`;
+          }
+          runGeneration(false);
+        });
+      }
+
+      paramsContainer.appendChild(wrap);
+    }
+  }
+
+  function runGeneration(animateBtn = true) {
+    const sys = SYSTEMS.find(s => s.id === state.activeId);
+    const params = state.paramValues[sys.id];
+
+    const t0 = performance.now();
+    state.currentData = generateSystemData(sys.id, params);
+    renderVisualization(noiseCanvas, state.currentData, state.viewMode, state.palette, sys.id);
+    const t1 = performance.now();
+
+    genTimeVal.textContent = `${(t1 - t0).toFixed(1)} ms`;
+
+    if (animateBtn) {
+      generateBtn.classList.remove("pulse");
+      void generateBtn.offsetWidth;
+      generateBtn.classList.add("pulse");
+    }
+  }
+
+  function selectSystem(id) {
+    state.activeId = id;
+    const sys = SYSTEMS.find(s => s.id === id);
+    renderSidebar();
+    renderDocumentation(sys);
+    renderParameters(sys);
+    runGeneration(true);
+  }
+
+  // Event Listeners
+  generateBtn.addEventListener("click", () => runGeneration(true));
+
+  randomSeedBtn.addEventListener("click", () => {
+    const sys = SYSTEMS.find(s => s.id === state.activeId);
+    const vals = state.paramValues[sys.id];
+    if ("seed" in vals) vals.seed = Math.floor(Math.random() * 9998) + 1;
+    if ("seedA" in vals) vals.seedA = Math.floor(Math.random() * 4999) + 1;
+    if ("seedB" in vals) vals.seedB = Math.floor(Math.random() * 4998) + 5001;
+    renderDocumentation(sys);
+    renderParameters(sys);
+    runGeneration(true);
+  });
+
+  btnView2D.addEventListener("click", () => {
+    state.viewMode = "2d";
+    btnView2D.classList.add("active");
+    btnView3D.classList.remove("active");
+    if (state.currentData) {
+      renderVisualization(noiseCanvas, state.currentData, state.viewMode, state.palette, state.activeId);
+    }
+  });
+
+  btnView3D.addEventListener("click", () => {
+    state.viewMode = "3d";
+    btnView3D.classList.add("active");
+    btnView2D.classList.remove("active");
+    if (state.currentData) {
+      renderVisualization(noiseCanvas, state.currentData, state.viewMode, state.palette, state.activeId);
+    }
+  });
+
+  paletteSelect.addEventListener("change", () => {
+    state.palette = paletteSelect.value;
+    if (state.currentData) {
+      renderVisualization(noiseCanvas, state.currentData, state.viewMode, state.palette, state.activeId);
+    }
+  });
+
+  // Canvas Interactive Telemetry Hover
+  noiseCanvas.addEventListener("mousemove", (e) => {
+    if (!state.currentData || !state.renderBounds) return;
+    const rect = noiseCanvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const N = state.currentData.meta.N;
+
+    let nx = 0, ny = 0;
+    if (state.renderBounds.mode === "2d") {
+      const { ox, oy, size } = state.renderBounds;
+      nx = (mx - ox) / size;
+      ny = (my - oy) / size;
+    } else {
+      nx = mx / rect.width;
+      ny = my / rect.height;
+    }
+
+    if (nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1) {
+      const gx = Math.min(N - 1, Math.max(0, Math.floor(nx * N)));
+      const gy = Math.min(N - 1, Math.max(0, Math.floor(ny * N)));
+      const val = state.currentData.field[gy * N + gx];
+      hoverCoord.textContent = `${gx.toString().padStart(2, "0")}, ${gy.toString().padStart(2, "0")}`;
+      hoverValue.textContent = val.toFixed(3);
+    } else {
+      hoverCoord.textContent = "-- , --";
+      hoverValue.textContent = "0.000";
+    }
+  });
+
+  noiseCanvas.addEventListener("mouseleave", () => {
+    hoverCoord.textContent = "-- , --";
+    hoverValue.textContent = "0.000";
+  });
+
+  window.addEventListener("resize", () => {
+    if (state.currentData) {
+      renderVisualization(noiseCanvas, state.currentData, state.viewMode, state.palette, state.activeId);
+    }
+  });
+
+  // Boot application on Perlin Noise
+  selectSystem("perlin");
+})();
+</script>
+</body>
+</html>
